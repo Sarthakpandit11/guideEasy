@@ -27,6 +27,11 @@ if (!$conn->query($sql)) {
     die("Error creating table: " . $conn->error);
 }
 
+// Check if admin user exists, if not create it
+$admin_email = "admin@guideeasy.com";
+$admin_password = password_hash("admin123", PASSWORD_DEFAULT);
+
+
 $check_admin = "SELECT * FROM users WHERE email = ? AND role = 'admin'";
 $stmt = $conn->prepare($check_admin);
 $stmt->bind_param("s", $admin_email);
