@@ -31,7 +31,6 @@ if (!$conn->query($sql)) {
 $admin_email = "admin@guideeasy.com";
 $admin_password = password_hash("admin123", PASSWORD_DEFAULT);
 
-
 $check_admin = "SELECT * FROM users WHERE email = ? AND role = 'admin'";
 $stmt = $conn->prepare($check_admin);
 $stmt->bind_param("s", $admin_email);
