@@ -26,7 +26,28 @@ $users_result = $conn->query($users_query);
     <link rel="stylesheet" href="styles.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  
+    <style>
+        .dashboard-container {
+            margin-top: 80px;
+            padding: 20px;
+        }
+        .stat-card {
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .stat-card i {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        .users-table {
+            margin-top: 30px;
+        }
+        .table th {
+            background-color: #f8f9fa;
+        }
+    </style>
 </head>
 <body>
     <!-- Navigation Bar -->
@@ -109,7 +130,31 @@ $users_result = $conn->query($users_query);
                                 </tr>
                             </thead>
                             <tbody>
-                               
+                            <?php while ($user = $users_result->fetch_assoc()): ?>
+                                <tr>
+                                    <td><?php echo $user['id']; ?></td>
+                                    <td><?php echo htmlspecialchars($user['name']); ?></td>
+                                    <td><?php echo htmlspecialchars($user['email']); ?></td>
+                                    <td><?php echo htmlspecialchars($user['phone']); ?></td>
+                                    <td>
+                                        <span class="badge bg-<?php 
+                                            echo $user['role'] === 'admin' ? 'danger' : 
+                                                ($user['role'] === 'guide' ? 'success' : 'info'); 
+                                        ?>">
+                                            <?php echo ucfirst($user['role']); ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-<?php 
+                                            echo $user['status'] === 'approved' ? 'success' : 
+                                                ($user['status'] === 'pending' ? 'warning' : 'danger'); 
+                                        ?>">
+                                            <?php echo ucfirst($user['status']); ?>
+                                        </span>
+                                    </td>
+                                    <td><?php echo date('M d, Y', strtotime($user['created_at'])); ?></td>
+                                </tr>
+                                <?php endwhile; ?>
                             </tbody>
                         </table>
                     </div>
