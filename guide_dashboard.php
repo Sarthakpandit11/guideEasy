@@ -53,7 +53,27 @@ $bookings_stmt->bind_param("i", $guide_id);
 $bookings_stmt->execute();
 $bookings_result = $bookings_stmt->get_result();
 
+// Fetch guide's messages
+$messages_query = "SELECT m.*, u.name as sender_name, u.email as sender_email 
+                  FROM messages m 
+                  JOIN users u ON m.sender_id = u.id 
+                  WHERE m.receiver_id = ? 
+                  ORDER BY m.created_at DESC 
+                  LIMIT 5";
+$messages_stmt = $conn->prepare($messages_query);
+$messages_stmt->bind_param("i", $guide_id);
+$messages_stmt->execute();
+$messages_result = $messages_stmt->get_result();
 
+// Fetch guide's ratings
+$ratings_query = "SELECT AVG(rating) as avg_rating, COUNT(*) as total_ratings 
+                 FROM reviews 
+                 WHERE guide_id = ?";
+$ratings_stmt = $conn->prepare($ratings_query);
+$ratings_stmt->bind_param("i", $guide_id);
+$ratings_stmt->execute();
+$ratings_result = $ratings_stmt->get_result();
+$ratings = $ratings_result->fetch_assoc();
 ?>
 
 <!DOCTYPE html>
