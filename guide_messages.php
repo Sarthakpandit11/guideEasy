@@ -4,7 +4,87 @@ ini_set('display_errors', 1);
 session_start();
 require_once 'db_connect.php';
 
+// Use the guide_easy database
+$conn->select_db('guide_easy');
 
+// Check if user is logged in and is a guide
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'guide') {
+    header("Location: login.php");
+    exit();
+}
+
+$guide_id = $_SESSION['user_id'];
+
+// Handle message sending
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message']) && isset($_POST['tourist_id'])) {
+    $tourist_id = $_POST['tourist_id'];
+    $message = $_POST['message'];
+    
+    $insert_query = "INSERT INTO messages (sender_id, receiver_id, message) VALUES (?, ?, ?)";
+    $stmt = $conn->prepare($insert_query);
+    $stmt->bind_param("iis", $guide_id, $tourist_id, $message);
+    $stmt->execute();
+    
+    // Create notification for the tourist
+    $notification_query = "INSERT INTO message_notifications (sender_id, receiver_id, message) VALUES (?, ?, ?)";
+    $notification_message = "New message from " . $_SESSION['name'];
+    $stmt = $conn->prepare($notification_query);
+    $stmt->bind_param("iis", $guide_id, $tourist_id, $notification_message);
+    $stmt->execute();
+    
+    header("Location: guide_messages.php?tourist_id=" . $tourist_id);
+    exit();
+}
+
+// Get selected tourist's messages if tourist_id is provided
+$selected_tourist = null;
+$messages = [];
+if (isset($_GET['tourist_id'])) {
+    $tourist_id = $_GET['tourist_id'];
+    
+    // Get tourist info
+    $tourist_query = "SELECT * FROM users WHERE id = ? AND role = 'tourist'";
+    $stmt = $conn->prepare($tourist_query);
+    $stmt->bind_param("i", $tourist_id);
+    $stmt->execute();
+    $selected_tourist = $stmt->get_result()->fetch_assoc();
+    
+    // Get messages with this tourist
+    $messages_query = "SELECT m.*, 
+                      CASE 
+                          WHEN m.sender_id = ? THEN 'sent'
+                          ELSE 'received'
+                      END as message_type
+                      FROM messages m
+                      WHERE (m.sender_id = ? AND m.receiver_id = ?)
+                      OR (m.sender_id = ? AND m.receiver_id = ?)
+                      ORDER BY m.created_at ASC";
+    $stmt = $conn->prepare($messages_query);
+    $stmt->bind_param("iiiii", $guide_id, $guide_id, $tourist_id, $tourist_id, $guide_id);
+    $stmt->execute();
+    $messages_result = $stmt->get_result();
+    $messages = $messages_result->fetch_all(MYSQLI_ASSOC);
+    
+    // Mark messages as read
+    $update_query = "UPDATE messages SET is_read = 1 WHERE receiver_id = ? AND sender_id = ?";
+    $stmt = $conn->prepare($update_query);
+    $stmt->bind_param("ii", $guide_id, $tourist_id);
+    $stmt->execute();
+}
+
+// Get all tourists the guide has messaged
+$tourists_query = "SELECT DISTINCT u.*, 
+                  (SELECT COUNT(*) FROM messages WHERE sender_id = u.id AND receiver_id = ? AND is_read = 0) as unread_count
+                  FROM users u
+                  JOIN messages m ON u.id = m.sender_id OR u.id = m.receiver_id
+                  WHERE u.role = 'tourist'
+                  AND (m.sender_id = ? OR m.receiver_id = ?)
+                  GROUP BY u.id
+                  ORDER BY unread_count DESC, u.name ASC";
+$stmt = $conn->prepare($tourists_query);
+$stmt->bind_param("iii", $guide_id, $guide_id, $guide_id);
+$stmt->execute();
+$tourists_result = $stmt->get_result();
 ?>
 
 <!DOCTYPE html>

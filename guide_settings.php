@@ -1,286 +1,309 @@
 <?php
-// Enable error reporting
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
 session_start();
 require_once 'db_connect.php';
 
+// Check if user is logged in and is a tourist
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'tourist') {
+    header("Location: login.php");
+    exit();
+}
 
+// Get guide ID from URL
+if (!isset($_GET['id'])) {
+    header("Location: tourist_destinations.php");
+    exit();
+}
 
+$guide_id = $_GET['id'];
+
+// Fetch guide details
+$guide_query = "SELECT u.*, gs.*,
+                (SELECT AVG(rating) FROM reviews WHERE guide_id = u.id) as avg_rating,
+                (SELECT COUNT(*) FROM reviews WHERE guide_id = u.id) as total_reviews
+                FROM users u
+                LEFT JOIN guide_settings gs ON u.id = gs.user_id
+                WHERE u.id = ? AND u.role = 'guide'";
+$stmt = $conn->prepare($guide_query);
+$stmt->bind_param("i", $guide_id);
+$stmt->execute();
+$guide_result = $stmt->get_result();
+
+if ($guide_result->num_rows === 0) {
+    header("Location: tourist_destinations.php");
+    exit();
+}
+
+$guide = $guide_result->fetch_assoc();
+
+// Handle booking
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['book_guide'])) {
+    $start_date = $_POST['start_date'];
+    $end_date = $_POST['end_date'];
+    $number_of_people = (int)$_POST['number_of_people'];
+    $destination = trim($_POST['destination']); // Trim whitespace
+    
+    // Validate all inputs
+    $errors = [];
+    
+    if (empty($destination)) {
+        $errors[] = "Destination is required";
+    }
+    
+    if (empty($start_date)) {
+        $errors[] = "Start date is required";
+    } elseif (strtotime($start_date) < strtotime('today')) {
+        $errors[] = "Start date cannot be in the past";
+    }
+    
+    if (empty($end_date)) {
+        $errors[] = "End date is required";
+    } elseif (strtotime($end_date) < strtotime($start_date)) {
+        $errors[] = "End date must be after start date";
+    }
+    
+    if ($number_of_people < 1) {
+        $errors[] = "Number of people must be at least 1";
+    }
+    
+    if (empty($errors)) {
+        // Calculate total days and hours
+        $total_days = (strtotime($end_date) - strtotime($start_date)) / (60 * 60 * 24) + 1;
+        $total_hours = $total_days * 8; // Assuming 8 hours per day
+        
+        // Calculate total cost
+        $total_cost = $total_days * $guide['price_per_day'] * $number_of_people;
+        
+        // Start transaction
+        $conn->begin_transaction();
+        
+        try {
+            // Insert booking
+            $sql = "INSERT INTO bookings (tourist_id, guide_id, destination, start_date, end_date, 
+                    number_of_people, total_hours, total_days, total_cost, status) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("iisssiiid", 
+                $_SESSION['user_id'], 
+                $guide_id, 
+                $destination,
+                $start_date, 
+                $end_date, 
+                $number_of_people,
+                $total_hours,
+                $total_days,
+                $total_cost
+            );
+            
+            if ($stmt->execute()) {
+                $booking_id = $conn->insert_id;
+                
+                // Create notification for the guide
+                $message = "New booking request from " . $_SESSION['username'];
+                $sql = "INSERT INTO notifications (guide_id, tourist_id, booking_id, message) 
+                        VALUES (?, ?, ?, ?)";
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param("iiis", $guide_id, $_SESSION['user_id'], $booking_id, $message);
+                
+                if ($stmt->execute()) {
+                    $conn->commit();
+                    $_SESSION['success'] = "Your booking has been successfully created!";
+                    header("Location: my_bookings.php");
+                    exit();
+                } else {
+                    throw new Exception("Failed to create notification");
+                }
+            } else {
+                throw new Exception("Failed to create booking");
+            }
+        } catch (Exception $e) {
+            $conn->rollback();
+            $error = "An error occurred: " . $e->getMessage();
+        }
+    } else {
+        $error = implode("<br>", $errors);
+    }
+}
+
+// Set default images if not provided
+$profile_image = !empty($guide['profile_image']) ? $guide['profile_image'] : 'images/default_profile.png';
+$cover_image = !empty($guide['cover_image']) ? $guide['cover_image'] : 'images/default_cover.png';
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Guide Settings - Guide Easy</title>
+    <title><?php echo htmlspecialchars($guide['name']); ?> - Guide Profile</title>
+    <link rel="stylesheet" href="styles.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
-        body {
-            background-color: #f8f9fa;
-        }
-        .settings-section {
+        .profile-header {
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('<?php echo $cover_image; ?>');
+            background-size: cover;
+            background-position: center;
+            color: white;
             padding: 100px 0 50px;
-            min-height: 100vh;
+            margin-top: -20px;
         }
-        .settings-card {
+        .profile-image {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            border: 5px solid white;
+            margin-top: -75px;
+            object-fit: cover;
+        }
+        .info-card {
             background: white;
             border-radius: 10px;
-            padding: 30px;
-            margin-bottom: 30px;
+            padding: 20px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
         }
-        .calendar-day {
-            height: 100px;
-            border: 1px solid #dee2e6;
-            padding: 5px;
-        }
-        .calendar-day.available {
-            background-color: #d4edda;
-        }
-        .calendar-day.unavailable {
-            background-color: #f8d7da;
-        }
-        .calendar-day.today {
-            border: 2px solid #007bff;
-        }
-        .navbar {
-            box-shadow: 0 2px 4px rgba(0,0,0,.1);
+        .skill-badge {
+            background: #f8f9fa;
+            padding: 5px 15px;
+            border-radius: 20px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            display: inline-block;
         }
     </style>
 </head>
 <body>
-    <!-- Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+    <?php include 'navbar.php'; ?>
+
+    <!-- Profile Header -->
+    <div class="profile-header text-center">
         <div class="container">
-            <a class="navbar-brand" href="guide_dashboard.php">
-                <img src="images/logo.png" alt="Guide Easy Logo" height="40" class="d-inline-block align-text-top me-2">
-                Guide Easy
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <a class="nav-link" href="guide_dashboard.php">Dashboard</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="guide_bookings.php">My Bookings</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="guide_messages.php">Messages</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="guide_settings.php">Settings</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="logout.php">Logout</a>
-                    </li>
-                </ul>
+            <img src="<?php echo $profile_image; ?>" 
+                 alt="<?php echo htmlspecialchars($guide['name']); ?>" class="profile-image">
+            <h1 class="mt-3"><?php echo htmlspecialchars($guide['name']); ?></h1>
+            <p class="lead"><?php echo htmlspecialchars($guide['specialization'] ?? 'Professional Guide'); ?></p>
+            <div class="rating mb-3">
+                <?php
+                $avg_rating = round($guide['avg_rating'] ?? 0, 1);
+                $full_stars = floor($avg_rating);
+                $half_star = $avg_rating - $full_stars >= 0.5;
+                for ($i = 1; $i <= 5; $i++) {
+                    if ($i <= $full_stars) {
+                        echo '<i class="fas fa-star text-warning"></i>';
+                    } elseif ($i == $full_stars + 1 && $half_star) {
+                        echo '<i class="fas fa-star-half-alt text-warning"></i>';
+                    } else {
+                        echo '<i class="far fa-star text-warning"></i>';
+                    }
+                }
+                ?>
+                <span class="ms-2"><?php echo $avg_rating; ?> (<?php echo $guide['total_reviews'] ?? 0; ?> reviews)</span>
             </div>
         </div>
-    </nav>
+    </div>
 
-    <!-- Settings Section -->
-    <section class="settings-section">
-        <div class="container">
-            <?php if ($success_message): ?>
-                <div class="alert alert-success"><?php echo $success_message; ?></div>
-            <?php endif; ?>
-            <?php if ($error_message): ?>
-                <div class="alert alert-danger"><?php echo $error_message; ?></div>
-            <?php endif; ?>
+    <!-- Main Content -->
+    <div class="container mt-5">
+        <?php if (isset($error)): ?>
+            <div class="alert alert-danger"><?php echo $error; ?></div>
+        <?php endif; ?>
 
-            <div class="row">
-                <!-- Profile Settings -->
-                <div class="col-md-6">
-                    <div class="settings-card">
-                        <h3 class="mb-4">Profile Settings</h3>
-                        <form method="POST" action="" enctype="multipart/form-data">
-                            <input type="hidden" name="update_profile" value="1">
-                            <div class="mb-3">
-                                <label for="full_name" class="form-label">Full Name</label>
-                                <input type="text" class="form-control" id="full_name" name="full_name" 
-                                       value="<?php echo htmlspecialchars($guide['name'] ?? ''); ?>" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="email" class="form-label">Email</label>
-                                <input type="email" class="form-control" id="email" name="email" 
-                                       value="<?php echo htmlspecialchars($guide['email'] ?? ''); ?>" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="phone_number" class="form-label">Phone Number</label>
-                                <input type="text" class="form-control" id="phone_number" name="phone_number" 
-                                       value="<?php echo htmlspecialchars($guide['phone'] ?? ''); ?>">
-                            </div>
-                            <div class="mb-3">
-                                <label for="bio" class="form-label">Bio</label>
-                                <textarea class="form-control" id="bio" name="bio" rows="3"><?php echo htmlspecialchars($guide['bio'] ?? ''); ?></textarea>
-                            </div>
-                            <div class="mb-3">
-                                <label for="specialization" class="form-label">Specialization</label>
-                                <input type="text" class="form-control" id="specialization" name="specialization" 
-                                       value="<?php echo htmlspecialchars($guide['specialization'] ?? ''); ?>">
-                            </div>
-                            <div class="mb-3">
-                                <label for="rate_per_hour" class="form-label">Rate per Hour ($)</label>
-                                <input type="number" class="form-control" id="rate_per_hour" name="rate_per_hour" 
-                                       value="<?php echo htmlspecialchars($guide['rate_per_hour'] ?? 0); ?>" min="0" step="0.01">
-                            </div>
-                            <div class="mb-3">
-                                <label for="languages" class="form-label">Languages</label>
-                                <input type="text" class="form-control" id="languages" name="languages" 
-                                       value="<?php echo htmlspecialchars($guide['languages'] ?? ''); ?>">
-                            </div>
-                            <div class="mb-3">
-                                <label for="experience" class="form-label">Experience</label>
-                                <input type="text" class="form-control" id="experience" name="experience" 
-                                       value="<?php echo htmlspecialchars($guide['experience'] ?? ''); ?>">
-                            </div>
-                            <div class="mb-3">
-                                <label for="location" class="form-label">Location</label>
-                                <input type="text" class="form-control" id="location" name="location" 
-                                       value="<?php echo htmlspecialchars($guide['location'] ?? ''); ?>">
-                            </div>
-                            <div class="mb-3">
-                                <label for="profile_picture" class="form-label">Profile Picture</label>
-                                <input type="file" class="form-control" id="profile_picture" name="profile_picture">
-                            </div>
-                            <button type="submit" class="btn btn-primary">Update Profile</button>
-                        </form>
-                    </div>
+        <div class="row">
+            <!-- Left Column -->
+            <div class="col-md-8">
+                <!-- About Section -->
+                <div class="info-card">
+                    <h3>About</h3>
+                    <p><?php echo htmlspecialchars($guide['bio'] ?? 'No bio available'); ?></p>
                 </div>
 
-                <!-- Availability Settings -->
-                <div class="col-md-6">
-                    <div class="settings-card">
-                        <h3 class="mb-4">Availability Settings</h3>
-                        <form method="POST" action="">
-                            <input type="hidden" name="update_availability" value="1">
-                            <div class="mb-3">
-                                <label for="date_range" class="form-label">Select Date Range</label>
-                                <input type="text" class="form-control" id="date_range" name="date_range" 
-                                       placeholder="Select date range">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Status</label>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="status" 
-                                           id="status_available" value="available" checked>
-                                    <label class="form-check-label" for="status_available">
-                                        Available
-                                    </label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="status" 
-                                           id="status_unavailable" value="unavailable">
-                                    <label class="form-check-label" for="status_unavailable">
-                                        Unavailable
-                                    </label>
-                                </div>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Update Availability</button>
-                        </form>
+                <!-- Experience Section -->
+                <div class="info-card">
+                    <h3>Experience</h3>
+                    <p><?php echo htmlspecialchars($guide['experience'] ?? 'No experience details available'); ?></p>
+                </div>
 
-                        <!-- Calendar Display -->
-                        <div class="mt-4">
-                            <h5>Current Month Availability</h5>
-                            <div class="table-responsive">
-                                <table class="table table-bordered">
-                                    <thead>
-                                        <tr>
-                                            <th>Sun</th>
-                                            <th>Mon</th>
-                                            <th>Tue</th>
-                                            <th>Wed</th>
-                                            <th>Thu</th>
-                                            <th>Fri</th>
-                                            <th>Sat</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php
-                                        $first_day = date('Y-m-01');
-                                        $last_day = date('Y-m-t');
-                                        $current_day = $first_day;
-                                        $week = [];
-                                        
-                                        while (strtotime($current_day) <= strtotime($last_day)) {
-                                            $day_of_week = date('w', strtotime($current_day));
-                                            if ($day_of_week == 0 && !empty($week)) {
-                                                echo '<tr>';
-                                                foreach ($week as $day) {
-                                                    $status = $availability[$day] ?? '';
-                                                    $is_today = $day == date('Y-m-d');
-                                                    echo '<td class="calendar-day ' . $status . ($is_today ? ' today' : '') . '">';
-                                                    echo date('d', strtotime($day));
-                                                    echo '</td>';
-                                                }
-                                                echo '</tr>';
-                                                $week = [];
-                                            }
-                                            $week[] = $current_day;
-                                            $current_day = date('Y-m-d', strtotime($current_day . ' +1 day'));
-                                        }
-                                        
-                                        if (!empty($week)) {
-                                            echo '<tr>';
-                                            foreach ($week as $day) {
-                                                $status = $availability[$day] ?? '';
-                                                $is_today = $day == date('Y-m-d');
-                                                echo '<td class="calendar-day ' . $status . ($is_today ? ' today' : '') . '">';
-                                                echo date('d', strtotime($day));
-                                                echo '</td>';
-                                            }
-                                            echo '</tr>';
-                                        }
-                                        ?>
-                                    </tbody>
-                                </table>
-                            </div>
+                <!-- Skills Section -->
+                <div class="info-card">
+                    <h3>Skills & Specializations</h3>
+                    <div>
+                        <?php
+                        $skills = explode(',', $guide['skills'] ?? '');
+                        foreach ($skills as $skill) {
+                            if (trim($skill)) {
+                                echo '<span class="skill-badge">' . htmlspecialchars(trim($skill)) . '</span>';
+                            }
+                        }
+                        ?>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="col-md-4">
+                <!-- Message Button -->
+                <div class="info-card mb-4">
+                    <a href="tourist_messages.php?guide_id=<?php echo $guide_id; ?>" class="btn btn-primary w-100">
+                        <i class="fas fa-envelope me-2"></i> Message Guide
+                    </a>
+                </div>
+
+                <!-- Booking Form -->
+                <div class="info-card">
+                    <h3>Book This Guide</h3>
+                    <form method="POST" action="">
+                        <div class="mb-3">
+                            <label for="destination" class="form-label">Destination <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="destination" name="destination" 
+                                   value="<?php echo isset($_POST['destination']) ? htmlspecialchars($_POST['destination']) : ''; ?>" 
+                                   required>
                         </div>
-                    </div>
+                        <div class="mb-3">
+                            <label for="start_date" class="form-label">Start Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" 
+                                   value="<?php echo isset($_POST['start_date']) ? htmlspecialchars($_POST['start_date']) : ''; ?>" 
+                                   required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="end_date" class="form-label">End Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="end_date" name="end_date" 
+                                   value="<?php echo isset($_POST['end_date']) ? htmlspecialchars($_POST['end_date']) : ''; ?>" 
+                                   required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="number_of_people" class="form-label">Number of People <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="number_of_people" name="number_of_people" 
+                                   value="<?php echo isset($_POST['number_of_people']) ? htmlspecialchars($_POST['number_of_people']) : '1'; ?>" 
+                                   min="1" required>
+                        </div>
+                        <div class="mb-3">
+                            <p class="text-muted">Price per day: $<?php echo number_format($guide['price_per_day'], 2); ?></p>
+                        </div>
+                        <button type="submit" name="book_guide" class="btn btn-primary w-100">Book Now</button>
+                    </form>
                 </div>
-            </div>
-        </div>
-    </section>
 
-    <!-- Footer -->
-    <footer class="bg-dark text-light py-4">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-6">
-                    <h5>Guide Easy</h5>
-                    <p>Your trusted companion for exploring Nepal's wonders.</p>
-                </div>
-                <div class="col-md-6 text-md-end">
-                    <p>&copy; 2024 Guide Easy. All rights reserved.</p>
+                <!-- Contact Info -->
+                <div class="info-card">
+                    <h3>Contact Information</h3>
+                    <p><i class="fas fa-envelope"></i> <?php echo htmlspecialchars($guide['email']); ?></p>
+                    <p><i class="fas fa-phone"></i> <?php echo htmlspecialchars($guide['phone'] ?? 'Not provided'); ?></p>
+                    <p><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($guide['location'] ?? 'Not specified'); ?></p>
                 </div>
             </div>
         </div>
-    </footer>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
-        flatpickr("#date_range", {
-            mode: "range",
-            dateFormat: "Y-m-d",
-            minDate: "today",
-            onChange: function(selectedDates, dateStr, instance) {
-                if (selectedDates.length === 2) {
-                    document.querySelector('input[name="date_range"]').value = dateStr;
-                }
-            }
+        // Set minimum date to today
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('start_date').min = today;
+        document.getElementById('end_date').min = today;
+
+        // Update end date minimum when start date changes
+        document.getElementById('start_date').addEventListener('change', function() {
+            document.getElementById('end_date').min = this.value;
         });
     </script>
 </body>
-</html>
-<?php
-$conn->close();
-?> 
+</html> 

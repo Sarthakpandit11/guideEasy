@@ -2,7 +2,131 @@
 session_start();
 require_once 'db_connect.php';
 
+// Check if user is logged in and is a tourist
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'tourist') {
+    header("Location: login.php");
+    exit();
+}
 
+// Get guide ID from URL
+if (!isset($_GET['id'])) {
+    header("Location: tourist_destinations.php");
+    exit();
+}
+
+$guide_id = $_GET['id'];
+
+// Fetch guide details
+$guide_query = "SELECT u.*, gs.*,
+                (SELECT AVG(rating) FROM reviews WHERE guide_id = u.id) as avg_rating,
+                (SELECT COUNT(*) FROM reviews WHERE guide_id = u.id) as total_reviews
+                FROM users u
+                LEFT JOIN guide_settings gs ON u.id = gs.user_id
+                WHERE u.id = ? AND u.role = 'guide'";
+$stmt = $conn->prepare($guide_query);
+$stmt->bind_param("i", $guide_id);
+$stmt->execute();
+$guide_result = $stmt->get_result();
+
+if ($guide_result->num_rows === 0) {
+    header("Location: tourist_destinations.php");
+    exit();
+}
+
+$guide = $guide_result->fetch_assoc();
+
+// Handle booking
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['book_guide'])) {
+    $start_date = $_POST['start_date'];
+    $end_date = $_POST['end_date'];
+    $number_of_people = (int)$_POST['number_of_people'];
+    $destination = trim($_POST['destination']); // Trim whitespace
+    
+    // Validate all inputs
+    $errors = [];
+    
+    if (empty($destination)) {
+        $errors[] = "Destination is required";
+    }
+    
+    if (empty($start_date)) {
+        $errors[] = "Start date is required";
+    } elseif (strtotime($start_date) < strtotime('today')) {
+        $errors[] = "Start date cannot be in the past";
+    }
+    
+    if (empty($end_date)) {
+        $errors[] = "End date is required";
+    } elseif (strtotime($end_date) < strtotime($start_date)) {
+        $errors[] = "End date must be after start date";
+    }
+    
+    if ($number_of_people < 1) {
+        $errors[] = "Number of people must be at least 1";
+    }
+    
+    if (empty($errors)) {
+        // Calculate total days and hours
+        $total_days = (strtotime($end_date) - strtotime($start_date)) / (60 * 60 * 24) + 1;
+        $total_hours = $total_days * 8; // Assuming 8 hours per day
+        
+        // Calculate total cost
+        $total_cost = $total_days * $guide['price_per_day'] * $number_of_people;
+        
+        // Start transaction
+        $conn->begin_transaction();
+        
+        try {
+            // Insert booking
+            $sql = "INSERT INTO bookings (tourist_id, guide_id, destination, start_date, end_date, 
+                    number_of_people, total_hours, total_days, total_cost, status) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("iisssiiid", 
+                $_SESSION['user_id'], 
+                $guide_id, 
+                $destination,
+                $start_date, 
+                $end_date, 
+                $number_of_people,
+                $total_hours,
+                $total_days,
+                $total_cost
+            );
+            
+            if ($stmt->execute()) {
+                $booking_id = $conn->insert_id;
+                
+                // Create notification for the guide
+                $message = "New booking request from " . $_SESSION['username'];
+                $sql = "INSERT INTO notifications (guide_id, tourist_id, booking_id, message) 
+                        VALUES (?, ?, ?, ?)";
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param("iiis", $guide_id, $_SESSION['user_id'], $booking_id, $message);
+                
+                if ($stmt->execute()) {
+                    $conn->commit();
+                    $_SESSION['success'] = "Your booking has been successfully created!";
+                    header("Location: my_bookings.php");
+                    exit();
+                } else {
+                    throw new Exception("Failed to create notification");
+                }
+            } else {
+                throw new Exception("Failed to create booking");
+            }
+        } catch (Exception $e) {
+            $conn->rollback();
+            $error = "An error occurred: " . $e->getMessage();
+        }
+    } else {
+        $error = implode("<br>", $errors);
+    }
+}
+
+// Set default images if not provided
+$profile_image = !empty($guide['profile_image']) ? $guide['profile_image'] : 'images/default_profile.png';
+$cover_image = !empty($guide['cover_image']) ? $guide['cover_image'] : 'images/default_cover.png';
 ?>
 <!DOCTYPE html>
 <html lang="en">

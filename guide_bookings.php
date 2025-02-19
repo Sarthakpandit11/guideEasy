@@ -2,7 +2,110 @@
 session_start();
 require_once 'db_connect.php';
 
+// Check if user is logged in and is a guide
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'guide') {
+    header("Location: login.php");
+    exit();
+}
 
+$guide_id = $_SESSION['user_id'];
+
+// Handle booking status updates
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['booking_id']) && isset($_POST['status'])) {
+    $booking_id = $_POST['booking_id'];
+    $new_status = strtolower(trim($_POST['status'])); // Ensure lowercase and no whitespace
+    
+    // Validate status - use exact database values
+    $valid_statuses = ['pending', 'confirmed', 'completed', 'cancelled'];
+    if (!in_array($new_status, $valid_statuses)) {
+        $_SESSION['error'] = "Invalid status provided.";
+        header("Location: guide_bookings.php");
+        exit();
+    }
+    
+    // Start transaction
+    $conn->begin_transaction();
+    
+    try {
+        // First check if the booking exists and belongs to this guide
+        $check_query = "SELECT id FROM bookings WHERE id = ? AND guide_id = ?";
+        $check_stmt = $conn->prepare($check_query);
+        $check_stmt->bind_param("ii", $booking_id, $guide_id);
+        $check_stmt->execute();
+        $check_result = $check_stmt->get_result();
+        
+        if ($check_result->num_rows === 0) {
+            throw new Exception("Booking not found or you don't have permission to update it.");
+        }
+        
+        // Update booking status
+        $update_query = "UPDATE bookings SET status = ? WHERE id = ? AND guide_id = ?";
+        $update_stmt = $conn->prepare($update_query);
+        $update_stmt->bind_param("sii", $new_status, $booking_id, $guide_id);
+        
+        if (!$update_stmt->execute()) {
+            throw new Exception("Failed to update booking status: " . $update_stmt->error);
+        }
+        
+        if ($update_stmt->affected_rows === 0) {
+            throw new Exception("No changes were made to the booking status.");
+        }
+        
+        // Get tourist information
+        $tourist_query = "SELECT tourist_id, destination FROM bookings WHERE id = ?";
+        $tourist_stmt = $conn->prepare($tourist_query);
+        $tourist_stmt->bind_param("i", $booking_id);
+        
+        if (!$tourist_stmt->execute()) {
+            throw new Exception("Failed to retrieve tourist information: " . $tourist_stmt->error);
+        }
+        
+        $tourist_result = $tourist_stmt->get_result();
+        $booking_info = $tourist_result->fetch_assoc();
+        
+        if (!$booking_info) {
+            throw new Exception("Failed to retrieve booking information.");
+        }
+        
+        // Create notification for tourist
+        $message = "Your booking for " . $booking_info['destination'] . " has been " . $new_status;
+        $notification_query = "INSERT INTO notifications (tourist_id, guide_id, booking_id, message) 
+                             VALUES (?, ?, ?, ?)";
+        $notification_stmt = $conn->prepare($notification_query);
+        $notification_stmt->bind_param("iiis", $booking_info['tourist_id'], $guide_id, $booking_id, $message);
+        
+        if (!$notification_stmt->execute()) {
+            throw new Exception("Failed to create notification: " . $notification_stmt->error);
+        }
+        
+        $conn->commit();
+        $_SESSION['success'] = "Booking #" . $booking_id . " has been " . $new_status . " successfully!";
+    } catch (Exception $e) {
+        $conn->rollback();
+        $_SESSION['error'] = $e->getMessage();
+    }
+    
+    header("Location: guide_bookings.php");
+    exit();
+}
+
+// Get all bookings for the guide
+$bookings_query = "SELECT b.*, u.name as tourist_name, u.email as tourist_email, u.phone as tourist_phone
+                  FROM bookings b
+                  JOIN users u ON b.tourist_id = u.id
+                  WHERE b.guide_id = ?
+                  ORDER BY 
+                    CASE b.status 
+                        WHEN 'pending' THEN 1 
+                        WHEN 'confirmed' THEN 2 
+                        WHEN 'completed' THEN 3 
+                        WHEN 'cancelled' THEN 4 
+                    END,
+                    b.created_at DESC";
+$stmt = $conn->prepare($bookings_query);
+$stmt->bind_param("i", $guide_id);
+$stmt->execute();
+$bookings_result = $stmt->get_result();
 ?>
 
 <!DOCTYPE html>
