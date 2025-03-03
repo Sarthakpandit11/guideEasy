@@ -2,7 +2,24 @@
 session_start();
 require_once 'db_connect.php';
 
-//left to do
+// Check if user is logged in and is a tourist
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'tourist') {
+    header("Location: login.php");
+    exit();
+}
+
+// Fetch available guides
+$guides_query = "SELECT u.*, gs.availability_status, gs.location, gs.rate_per_hour,
+                (SELECT AVG(rating) FROM reviews WHERE guide_id = u.id) as avg_rating,
+                (SELECT COUNT(*) FROM reviews WHERE guide_id = u.id) as total_reviews
+                FROM users u
+                LEFT JOIN guide_settings gs ON u.id = gs.user_id
+                WHERE u.role = 'guide' AND gs.availability_status = 'available'";
+$guides_result = $conn->query($guides_query);
+$available_guides = [];
+while ($guide = $guides_result->fetch_assoc()) {
+    $available_guides[] = $guide;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">

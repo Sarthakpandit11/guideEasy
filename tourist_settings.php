@@ -2,7 +2,84 @@
 session_start();
 require_once 'db_connect.php';
 
-//left to do 
+// Check if user is logged in and is a tourist
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'tourist') {
+    header("Location: login.php");
+    exit();
+}
+
+$user_id = $_SESSION['user_id'];
+
+// Fetch current user data
+$query = "SELECT * FROM users WHERE id = ?";
+$stmt = $conn->prepare($query);
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$result = $stmt->get_result();
+$tourist = $result->fetch_assoc();
+
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $full_name = $_POST['name'];
+    $email = $_POST['email'];
+    $phone_number = $_POST['phone'];
+    $user_id = $_SESSION['user_id'];
+
+    // Start transaction
+    $conn->begin_transaction();
+
+    try {
+        // Update users table
+        $update_users_query = "UPDATE users SET name = ?, email = ?, phone = ? WHERE id = ?";
+        $update_users_stmt = $conn->prepare($update_users_query);
+        $update_users_stmt->bind_param("sssi", $full_name, $email, $phone_number, $user_id);
+        $update_success = $update_users_stmt->execute();
+
+        if (!$update_success) {
+            throw new Exception("User table update failed: " . $update_users_stmt->error);
+        }
+
+        // Insert into update_profile
+        $insert_profile_query = "INSERT INTO update_profile (user_id, full_name, email, phone_number) 
+                               VALUES (?, ?, ?, ?)";
+        $insert_profile_stmt = $conn->prepare($insert_profile_query);
+        $insert_profile_stmt->bind_param("isss", $user_id, $full_name, $email, $phone_number);
+        $insert_success = $insert_profile_stmt->execute();
+
+        if (!$insert_success) {
+            throw new Exception("Insert into update_profile failed: " . $insert_profile_stmt->error);
+        }
+
+        $conn->commit();
+        $_SESSION['success_message'] = "Profile updated successfully!";
+        header("Location: tourist_settings.php");
+        exit();
+    } catch (Exception $e) {
+        $conn->rollback();
+        $_SESSION['error_message'] = "Error: " . $e->getMessage();
+        header("Location: tourist_settings.php");
+        exit();
+    }
+}
+
+// Show session messages
+$success_message = $_SESSION['success_message'] ?? null;
+$error_message = $_SESSION['error_message'] ?? null;
+unset($_SESSION['success_message'], $_SESSION['error_message']);
+
+// Fetch latest update_profile info
+$latest_update_query = "SELECT * FROM update_profile WHERE user_id = ? ORDER BY updated_at DESC LIMIT 1";
+$latest_update_stmt = $conn->prepare($latest_update_query);
+$latest_update_stmt->bind_param("i", $user_id);
+$latest_update_stmt->execute();
+$latest_update_result = $latest_update_stmt->get_result();
+$latest_update = $latest_update_result->fetch_assoc();
+
+if ($latest_update) {
+    $tourist['name'] = $latest_update['full_name'];
+    $tourist['email'] = $latest_update['email'];
+    $tourist['phone'] = $latest_update['phone_number'];
+}
 ?>
 
 <!DOCTYPE html>
