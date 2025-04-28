@@ -234,7 +234,7 @@ $ratings = $ratings_result->fetch_assoc();
                 <div class="col-md-4">
                     <div class="profile-card">
                         <div class="text-center">
-                            <img src="<?php echo !empty($guide['profile_image']) ? $guide['profile_image'] : 'images/default_profile.jpg'; ?>" 
+                            <img src="<?php echo !empty($guide['profile_picture']) ? $guide['profile_picture'] : 'images/default_profile.jpg'; ?>" 
                                  alt="Profile Image" class="profile-image">
                             <h3><?php echo htmlspecialchars($guide['name']); ?></h3>
                             <p class="text-muted">Professional Tour Guide</p>

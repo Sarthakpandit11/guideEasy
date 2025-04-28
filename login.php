@@ -87,6 +87,25 @@
         <div class="container">
             <div class="login-container">
                 <h2 class="text-center mb-4">Login to Your Account</h2>
+                <?php if (isset($_GET['error'])): ?>
+                    <div class="alert alert-danger text-center">
+                        <?php
+                        switch ($_GET['error']) {
+                            case 'not_approved':
+                                echo 'Your account is pending admin approval. Please wait until you are approved to log in.';
+                                break;
+                            case 'invalid_credentials':
+                                echo 'Invalid email or password.';
+                                break;
+                            case 'user_not_found':
+                                echo 'No user found with that email address.';
+                                break;
+                            default:
+                                echo 'Login error. Please try again.';
+                        }
+                        ?>
+                    </div>
+                <?php endif; ?>
                 <form action="process_login.php" method="POST">
                     <div class="mb-3">
                         <label for="email" class="form-label">Email Address</label>

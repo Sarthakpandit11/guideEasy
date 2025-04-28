@@ -125,7 +125,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['book_guide'])) {
 }
 
 // Set default images if not provided
-$profile_image = !empty($guide['profile_image']) ? $guide['profile_image'] : 'images/default_profile.png';
+$profile_image = !empty($guide['profile_picture']) ? $guide['profile_picture'] : 'images/default_profile.png';
 $cover_image = !empty($guide['cover_image']) ? $guide['cover_image'] : 'images/default_cover.png';
 ?>
 <!DOCTYPE html>

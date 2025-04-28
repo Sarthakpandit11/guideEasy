@@ -69,14 +69,18 @@ try {
                         gs.location,
                         gs.rate_per_hour,
                         gs.bio,
+                        GROUP_CONCAT(DISTINCT gc.name) as categories,
                         COALESCE((SELECT AVG(rating) FROM reviews WHERE guide_id = u.id), 0) as avg_rating,
                         COALESCE((SELECT COUNT(*) FROM reviews WHERE guide_id = u.id), 0) as total_reviews
                     FROM users u
                     JOIN guide_settings gs ON u.id = gs.user_id
+                    LEFT JOIN guide_category_mappings gcm ON u.id = gcm.guide_id AND gcm.location = gs.location
+                    LEFT JOIN guide_categories gc ON gcm.category_id = gc.id
                     WHERE u.role = 'guide' 
                     AND gs.availability_status = 'available'
                     AND gs.location IS NOT NULL
                     AND LOWER(TRIM(gs.location)) = LOWER(TRIM(?))
+                    GROUP BY u.id
                     ORDER BY avg_rating DESC, total_reviews DESC";
 
     $stmt = $conn->prepare($guides_query);
@@ -191,6 +195,41 @@ ob_flush();
             font-size: 1.1rem;
             padding: 8px 12px;
         }
+        /* Category Filter Styles */
+        .category-filter {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+        }
+        .category-filter .btn-outline-primary {
+            border-width: 2px;
+            font-weight: 500;
+            padding: 10px 15px;
+            transition: all 0.3s;
+        }
+        .category-filter .btn-outline-primary:hover,
+        .category-filter .btn-outline-primary.active {
+            background-color: #0d6efd;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(13, 110, 253, 0.2);
+        }
+        .category-filter .btn-link {
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        .category-filter .btn-link:hover {
+            text-decoration: underline;
+        }
+        .categories .badge {
+            font-size: 0.85rem;
+            padding: 6px 12px;
+            margin-right: 5px;
+            margin-bottom: 5px;
+            border-radius: 20px;
+        }
     </style>
 </head>
 <body>
@@ -235,13 +274,108 @@ ob_flush();
                 <p><strong>Number of People:</strong> <?php echo htmlspecialchars($_SESSION['booking_details']['people']); ?></p>
             </div>
 
+            <!-- Category Filter Section -->
+            <div class="category-filter mb-4">
+                <h4 class="mb-3">Filter by Tour Category</h4>
+                <div class="row g-2">
+                    <?php
+                    // Get all categories
+                    $categories_query = "SELECT * FROM guide_categories ORDER BY name";
+                    $categories_result = $conn->query($categories_query);
+                    
+                    // Get selected category from URL if any
+                    $selected_category = isset($_GET['category']) ? $_GET['category'] : '';
+                    
+                    while ($category = $categories_result->fetch_assoc()):
+                        $is_active = $selected_category == $category['id'];
+                    ?>
+                        <div class="col-md-3 col-6">
+                            <a href="?destination=<?php echo urlencode($destination); ?>&category=<?php echo $category['id']; ?>" 
+                               class="btn btn-outline-primary w-100 <?php echo $is_active ? 'active' : ''; ?>">
+                                <?php
+                                $icon = '';
+                                switch($category['name']) {
+                                    case 'Sightseeing Tours':
+                                        $icon = 'fa-camera';
+                                        break;
+                                    case 'Cultural Tours':
+                                        $icon = 'fa-landmark';
+                                        break;
+                                    case 'Hiking Tours':
+                                        $icon = 'fa-hiking';
+                                        break;
+                                    case 'Food Tours':
+                                        $icon = 'fa-utensils';
+                                        break;
+                                }
+                                ?>
+                                <i class="fas <?php echo $icon; ?> me-2"></i>
+                                <?php echo htmlspecialchars($category['name']); ?>
+                            </a>
+                        </div>
+                    <?php endwhile; ?>
+                    
+                    <?php if ($selected_category): ?>
+                        <div class="col-12 mt-2">
+                            <a href="?destination=<?php echo urlencode($destination); ?>" class="btn btn-link text-danger">
+                                <i class="fas fa-times"></i> Clear Filter
+                            </a>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+
             <!-- Guide Selection Section -->
             <div class="guide-selection-section">
                 <h2 class="mb-4">Available Guides in <?php echo htmlspecialchars($_SESSION['booking_details']['destination']); ?></h2>
                 <p class="text-muted mb-4">Please review the available guides and select one by viewing their profile.</p>
 
                 <div class="row">
-                    <?php while ($guide = $guides_result->fetch_assoc()): ?>
+                    <?php 
+                    // Modify the query to filter by category if selected
+                    if ($selected_category) {
+                        $guides_query = "SELECT 
+                            u.*,
+                            gs.availability_status,
+                            gs.location,
+                            gs.rate_per_hour,
+                            gs.bio,
+                            GROUP_CONCAT(DISTINCT gc.name) as categories,
+                            COALESCE((SELECT AVG(rating) FROM reviews WHERE guide_id = u.id), 0) as avg_rating,
+                            COALESCE((SELECT COUNT(*) FROM reviews WHERE guide_id = u.id), 0) as total_reviews
+                        FROM users u
+                        JOIN guide_settings gs ON u.id = gs.user_id
+                        JOIN guide_category_mappings gcm ON u.id = gcm.guide_id AND gcm.location = gs.location
+                        LEFT JOIN guide_categories gc ON gcm.category_id = gc.id
+                        WHERE u.role = 'guide' 
+                        AND gs.availability_status = 'available'
+                        AND gs.location IS NOT NULL
+                        AND LOWER(TRIM(gs.location)) = LOWER(TRIM(?))
+                        AND gcm.category_id = ?
+                        GROUP BY u.id
+                        ORDER BY avg_rating DESC, total_reviews DESC";
+                        
+                        $stmt = $conn->prepare($guides_query);
+                        $stmt->bind_param("si", $destination, $selected_category);
+                    } else {
+                        // Use the original query without category filter
+                        $stmt = $conn->prepare($guides_query);
+                        $stmt->bind_param("s", $destination);
+                    }
+                    
+                    $stmt->execute();
+                    $guides_result = $stmt->get_result();
+                    
+                    if ($guides_result->num_rows === 0): ?>
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> 
+                                No guides available for the selected category. Please try another category or clear the filter.
+                            </div>
+                        </div>
+                    <?php endif;
+                    
+                    while ($guide = $guides_result->fetch_assoc()): ?>
                         <div class="col-md-6">
                             <div class="guide-card">
                                 <div class="row">
@@ -287,6 +421,20 @@ ob_flush();
                                             echo strlen($bio) > 150 ? htmlspecialchars(substr($bio, 0, 150)) . '...' : htmlspecialchars($bio);
                                             ?>
                                         </div>
+                                        
+                                        <!-- Add categories display -->
+                                        <?php if (!empty($guide['categories'])): ?>
+                                        <div class="categories mb-3">
+                                            <strong>Specialties:</strong><br>
+                                            <?php
+                                            $categories = explode(',', $guide['categories']);
+                                            foreach ($categories as $category) {
+                                                echo '<span class="badge bg-info me-1 mb-1">' . htmlspecialchars(trim($category)) . '</span>';
+                                            }
+                                            ?>
+                                        </div>
+                                        <?php endif; ?>
+
                                         <div class="d-grid">
                                             <a href="guide_profile.php?id=<?php echo $guide['id']; ?>&booking=true" class="btn btn-primary">
                                                 <i class="fas fa-user-circle"></i> View Full Profile & Book

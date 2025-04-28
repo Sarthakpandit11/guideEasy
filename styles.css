@@ -475,24 +475,6 @@ body {
     padding-bottom: 100px; /* Add space for fixed footer */
 }
 
-/* Fixed Footer */
-.fixed-footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    background-color: #343a40;
-    color: white;
-    padding: 20px 0;
-    z-index: 1000;
-}
-
-.fixed-footer .container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .fixed-footer .container {

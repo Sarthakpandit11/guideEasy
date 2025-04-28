@@ -8,6 +8,20 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     exit();
 }
 
+// Handle guide approval/cancellation
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['guide_action'], $_POST['guide_id'])) {
+    $guide_id = intval($_POST['guide_id']);
+    $action = $_POST['guide_action'];
+    if ($action === 'approve') {
+        $conn->query("UPDATE users SET status = 'approved' WHERE id = $guide_id AND role = 'guide'");
+    } elseif ($action === 'cancel') {
+        $conn->query("UPDATE users SET status = 'cancelled' WHERE id = $guide_id AND role = 'guide'");
+    }
+    // Refresh to avoid resubmission
+    header("Location: admin_dashboard.php");
+    exit();
+}
+
 // Get user statistics
 $total_users = $conn->query("SELECT COUNT(*) as count FROM users")->fetch_assoc()['count'];
 $total_guides = $conn->query("SELECT COUNT(*) as count FROM users WHERE role = 'guide'")->fetch_assoc()['count'];
@@ -127,11 +141,12 @@ $users_result = $conn->query($users_query);
                                     <th>Role</th>
                                     <th>Status</th>
                                     <th>Joined Date</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                             <?php while ($user = $users_result->fetch_assoc()): ?>
-                                <tr>
+                                <tr id="user-row-<?php echo $user['id']; ?>">
                                     <td><?php echo $user['id']; ?></td>
                                     <td><?php echo htmlspecialchars($user['name']); ?></td>
                                     <td><?php echo htmlspecialchars($user['email']); ?></td>
@@ -145,6 +160,13 @@ $users_result = $conn->query($users_query);
                                         </span>
                                     </td>
                                     <td>
+                                        <?php if ($user['role'] === 'guide' && $user['status'] !== 'approved'): ?>
+                                            <form method="POST" class="d-inline">
+                                                <input type="hidden" name="guide_id" value="<?php echo $user['id']; ?>">
+                                                <button type="submit" name="guide_action" value="approve" class="btn btn-success btn-sm">Approve</button>
+                                                <button type="submit" name="guide_action" value="cancel" class="btn btn-danger btn-sm">Cancel</button>
+                                            </form>
+                                        <?php endif; ?>
                                         <span class="badge bg-<?php 
                                             echo $user['status'] === 'approved' ? 'success' : 
                                                 ($user['status'] === 'pending' ? 'warning' : 'danger'); 
@@ -153,8 +175,11 @@ $users_result = $conn->query($users_query);
                                         </span>
                                     </td>
                                     <td><?php echo date('M d, Y', strtotime($user['created_at'])); ?></td>
+                                    <td>
+                                        <button class="btn btn-outline-danger btn-sm delete-user-btn" data-user-id="<?php echo $user['id']; ?>">Delete</button>
+                                    </td>
                                 </tr>
-                                <?php endwhile; ?>
+                            <?php endwhile; ?>
                             </tbody>
                         </table>
                     </div>
@@ -163,7 +188,7 @@ $users_result = $conn->query($users_query);
         </div>
 
         <!-- Fixed Footer -->
-        <footer class="fixed-footer">
+        <footer class="bg-dark text-light py-4">
             <div class="container">
                 <div class="row">
                     <div class="col-md-6">
@@ -179,6 +204,31 @@ $users_result = $conn->query($users_query);
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.delete-user-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                if (confirm('Are you sure you want to delete this user?')) {
+                    const userId = this.getAttribute('data-user-id');
+                    fetch('delete_user.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: 'user_id=' + encodeURIComponent(userId)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            document.getElementById('user-row-' + userId).remove();
+                        } else {
+                            alert('Failed to delete user.');
+                        }
+                    })
+                    .catch(() => alert('Failed to delete user.'));
+                }
+            });
+        });
+    });
+    </script>
 </body>
 </html>
 <?php

@@ -26,6 +26,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($result->num_rows == 1) {
         $user = $result->fetch_assoc();
         if (password_verify($password, $user['password'])) {
+            // Only allow guide login if approved
+            if ($user['role'] === 'guide' && $user['status'] !== 'approved') {
+                header("Location: login.php?error=not_approved");
+                exit();
+            }
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['email'] = $user['email'];
             $_SESSION['role'] = $user['role'];
