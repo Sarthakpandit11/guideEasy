@@ -51,7 +51,7 @@
                 <div class="destination-card mb-4">
                     <div class="row">
                         <div class="col-md-4">
-                            <img src="images/kathmandu.jpg" alt="Kathmandu" class="img-fluid rounded">
+                            <img src="kathmandu/thamel.png" alt="Kathmandu" class="img-fluid rounded">
                         </div>
                         <div class="col-md-8">
                             <h2>Kathmandu</h2>
@@ -65,7 +65,7 @@
                 <div class="destination-card mb-4">
                     <div class="row">
                         <div class="col-md-4">
-                            <img src="images/pokhara.jpg" alt="Pokhara" class="img-fluid rounded">
+                            <img src="pokhara/pokhara.png" alt="Pokhara" class="img-fluid rounded">
                         </div>
                         <div class="col-md-8">
                             <h2>Pokhara</h2>
@@ -79,7 +79,7 @@
                 <div class="destination-card mb-4">
                     <div class="row">
                         <div class="col-md-4">
-                            <img src="images/everest.jpg" alt="Everest Region" class="img-fluid rounded">
+                            <img src="Everest/EverestRegion.png" alt="Everest Region" class="img-fluid rounded">
                         </div>
                         <div class="col-md-8">
                             <h2>Everest Region</h2>
@@ -93,7 +93,7 @@
                 <div class="destination-card mb-4">
                     <div class="row">
                         <div class="col-md-4">
-                            <img src="images/chitwan.jpg" alt="Chitwan" class="img-fluid rounded">
+                            <img src="Everest/chitwan.png" alt="Chitwan" class="img-fluid rounded">
                         </div>
                         <div class="col-md-8">
                             <h2>Chitwan</h2>
@@ -107,7 +107,7 @@
                 <div class="destination-card mb-4">
                     <div class="row">
                         <div class="col-md-4">
-                            <img src="images/lumbini.jpg" alt="Lumbini" class="img-fluid rounded">
+                            <img src="Everest/lumbini.png" alt="Lumbini" class="img-fluid rounded">
                         </div>
                         <div class="col-md-8">
                             <h2>Lumbini</h2>

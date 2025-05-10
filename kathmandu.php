@@ -49,7 +49,7 @@
                 
                 <!-- Hero Image -->
                 <div class="destination-hero mb-4">
-                    <img src="images/kathmandu.jpg" alt="Kathmandu" class="img-fluid rounded">
+                    <img src="kathmandu/kathmandumain.png" alt="Kathmandu Main" class="img-fluid rounded">
                 </div>
 
                 <!-- Overview -->
@@ -64,28 +64,28 @@
                     <div class="row">
                         <div class="col-md-6 mb-4">
                             <div class="activity-card">
-                                <img src="images/kathmandu-durbar.jpg" alt="Kathmandu Durbar Square" class="img-fluid rounded">
+                                <img src="kathmandu/ktmdurbarsquare.png" alt="Kathmandu Durbar Square" class="img-fluid rounded">
                                 <h3>Visit Kathmandu Durbar Square</h3>
                                 <p>Explore the ancient royal palace complex with its intricate wood carvings and traditional architecture.</p>
                             </div>
                         </div>
                         <div class="col-md-6 mb-4">
                             <div class="activity-card">
-                                <img src="images/boudhanath.jpg" alt="Boudhanath Stupa" class="img-fluid rounded">
+                                <img src="kathmandu/Boudhanath Stupa.png" alt="Boudhanath Stupa" class="img-fluid rounded">
                                 <h3>Boudhanath Stupa</h3>
                                 <p>Experience the spiritual atmosphere of one of the largest stupas in the world, surrounded by monasteries and prayer wheels.</p>
                             </div>
                         </div>
                         <div class="col-md-6 mb-4">
                             <div class="activity-card">
-                                <img src="images/pashupatinath.jpg" alt="Pashupatinath Temple" class="img-fluid rounded">
+                                <img src="kathmandu/pashu.png" alt="Pashupatinath Temple" class="img-fluid rounded">
                                 <h3>Pashupatinath Temple</h3>
                                 <p>Witness Hindu rituals and ceremonies at this sacred temple complex on the banks of the Bagmati River.</p>
                             </div>
                         </div>
                         <div class="col-md-6 mb-4">
                             <div class="activity-card">
-                                <img src="images/thamel.jpg" alt="Thamel" class="img-fluid rounded">
+                                <img src="kathmandu/thamel.png" alt="Thamel" class="img-fluid rounded">
                                 <h3>Explore Thamel</h3>
                                 <p>Shop for souvenirs, enjoy local cuisine, and experience the vibrant nightlife in Kathmandu's tourist hub.</p>
                             </div>

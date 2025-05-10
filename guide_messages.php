@@ -96,49 +96,141 @@ $tourists_result = $stmt->get_result();
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        .message-container {
-            height: calc(100vh - 200px);
+        body {
+            background: #f0f2f5;
+        }
+        .chat-container {
+            display: flex;
+            height: 75vh;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            background: #fff;
+            margin-top: 30px;
+        }
+        .user-list {
+            width: 280px;
+            background: #f5f6fa;
+            border-right: 1px solid #e4e6eb;
+            padding: 0;
+            margin: 0;
+            list-style: none;
             overflow-y: auto;
         }
-        .message {
-            max-width: 70%;
-            margin-bottom: 10px;
-            padding: 10px;
-            border-radius: 10px;
-        }
-        .message.sent {
-            background-color: #007bff;
-            color: white;
-            margin-left: auto;
-        }
-        .message.received {
-            background-color: #f8f9fa;
-            color: black;
-            margin-right: auto;
-        }
-        .message-time {
-            font-size: 0.7rem;
-            color: #6c757d;
-        }
-        .tourist-list {
-            height: calc(100vh - 200px);
-            overflow-y: auto;
-        }
-        .tourist-item {
+        .user-list .tourist-item {
+            display: flex;
+            align-items: center;
+            padding: 16px;
             cursor: pointer;
-            padding: 10px;
-            border-bottom: 1px solid #eee;
+            transition: background 0.2s;
+            border-bottom: 1px solid #e4e6eb;
+            background: none;
         }
-        .tourist-item:hover {
-            background-color: #f8f9fa;
+        .user-list .tourist-item.active,
+        .user-list .tourist-item:hover {
+            background: #e7f3ff;
         }
-        .tourist-item.active {
-            background-color: #e9ecef;
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #dbeafe;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #2563eb;
+            margin-right: 12px;
+            font-size: 20px;
         }
-        .unread-badge {
-            position: absolute;
-            top: 5px;
-            right: 5px;
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #f0f2f5;
+            padding: 0;
+        }
+        .chat-header {
+            padding: 18px 24px;
+            background: #fff;
+            border-bottom: 1px solid #e4e6eb;
+            font-weight: bold;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+        }
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .message-row {
+            display: flex;
+            align-items: flex-end;
+        }
+        .message-row.sent {
+            justify-content: flex-end;
+        }
+        .message-bubble {
+            max-width: 60%;
+            padding: 12px 18px;
+            border-radius: 20px;
+            background: #e4e6eb;
+            color: #1a1a1a;
+            font-size: 16px;
+            margin-bottom: 2px;
+            position: relative;
+            word-break: break-word;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .message-row.sent .message-bubble {
+            background: #0084ff;
+            color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+        .message-row.received .message-bubble {
+            background: #e4e6eb;
+            color: #1a1a1a;
+            border-bottom-left-radius: 4px;
+        }
+        .message-meta {
+            font-size: 12px;
+            color: #888;
+            margin: 0 8px;
+            margin-bottom: 8px;
+            text-align: right;
+        }
+        .message-input-container {
+            display: flex;
+            padding: 16px 24px;
+            background: #fff;
+            border-top: 1px solid #e4e6eb;
+        }
+        .message-input {
+            flex: 1;
+            border: none;
+            border-radius: 20px;
+            padding: 10px 16px;
+            font-size: 16px;
+            background: #f1f5f9;
+            margin-right: 8px;
+            outline: none;
+        }
+        .send-btn {
+            background: #0084ff;
+            color: #fff;
+            border: none;
+            border-radius: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .send-btn:hover {
+            background: #005bb5;
         }
     </style>
 </head>
@@ -177,73 +269,51 @@ $tourists_result = $stmt->get_result();
 
     <!-- Main Content -->
     <div class="container" style="margin-top: 80px;">
-        <div class="row">
-            <!-- Tourist List -->
-            <div class="col-md-4">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">Tourists</h5>
+        <div class="chat-container">
+            <!-- Sidebar: Tourist List -->
+            <div class="user-list">
+                <?php while ($tourist = $tourists_result->fetch_assoc()): ?>
+                    <div class="tourist-item<?php echo isset($selected_tourist) && $selected_tourist['id'] == $tourist['id'] ? ' active' : ''; ?>"
+                         onclick="window.location.href='guide_messages.php?tourist_id=<?php echo $tourist['id']; ?>'">
+                        <div class="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight:600;"><?php echo htmlspecialchars($tourist['name']); ?></div>
+                            <small class="text-muted">Click to chat</small>
+                        </div>
                     </div>
-                    <div class="tourist-list">
-                        <?php while ($tourist = $tourists_result->fetch_assoc()): ?>
-                            <div class="tourist-item position-relative <?php echo isset($selected_tourist) && $selected_tourist['id'] == $tourist['id'] ? 'active' : ''; ?>"
-                                 onclick="window.location.href='guide_messages.php?tourist_id=<?php echo $tourist['id']; ?>'">
-                                <div class="d-flex align-items-center">
-                                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-2" 
-                                         style="width: 40px; height: 40px;">
-                                        <i class="fas fa-user"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-0"><?php echo htmlspecialchars($tourist['name']); ?></h6>
-                                        <small class="text-muted">Click to chat</small>
-                                    </div>
-                                </div>
-                                <?php if ($tourist['unread_count'] > 0): ?>
-                                    <span class="badge bg-danger unread-badge"><?php echo $tourist['unread_count']; ?></span>
-                                <?php endif; ?>
-                            </div>
-                        <?php endwhile; ?>
-                    </div>
-                </div>
+                <?php endwhile; ?>
             </div>
-
             <!-- Chat Area -->
-            <div class="col-md-8">
-                <?php if (isset($selected_tourist)): ?>
-                    <div class="card">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <div class="d-flex align-items-center">
-                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-2" 
-                                     style="width: 40px; height: 40px;">
-                                    <i class="fas fa-user"></i>
-                                </div>
-                                <h5 class="mb-0"><?php echo htmlspecialchars($selected_tourist['name']); ?></h5>
-                            </div>
-                        </div>
-                        <div class="message-container p-3" id="messageContainer">
-                            <?php foreach ($messages as $message): ?>
-                                <div class="message <?php echo $message['message_type']; ?>">
-                                    <div class="message-text"><?php echo htmlspecialchars($message['message']); ?></div>
-                                    <div class="message-time">
-                                        <?php echo date('M d, Y h:i A', strtotime($message['created_at'])); ?>
+            <div class="chat-area">
+                <?php if ($selected_tourist): ?>
+                    <div class="chat-header">
+                        <div class="user-avatar me-2"><i class="fas fa-user"></i></div>
+                        <?php echo htmlspecialchars($selected_tourist['name']); ?>
+                    </div>
+                    <div class="messages">
+                        <?php foreach ($messages as $msg): ?>
+                            <div class="message-row <?php echo $msg['message_type']; ?>">
+                                <div>
+                                    <div class="message-bubble">
+                                        <?php echo htmlspecialchars($msg['message']); ?>
+                                    </div>
+                                    <div class="message-meta">
+                                        <?php echo date('M d, Y h:i A', strtotime($msg['created_at'])); ?>
                                     </div>
                                 </div>
-                            <?php endforeach; ?>
-                        </div>
-                        <div class="card-footer">
-                            <form method="POST" class="d-flex">
-                                <input type="hidden" name="tourist_id" value="<?php echo $selected_tourist['id']; ?>">
-                                <input type="text" name="message" class="form-control me-2" placeholder="Type your message..." required>
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-paper-plane"></i> Send
-                                </button>
-                            </form>
-                        </div>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
+                    <form class="message-input-container" method="POST" action="">
+                        <input type="hidden" name="tourist_id" value="<?php echo $selected_tourist['id']; ?>">
+                        <input class="message-input" type="text" name="message" placeholder="Type your message..." required />
+                        <button class="send-btn" type="submit">Send</button>
+                    </form>
                 <?php else: ?>
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i> 
-                        Select a tourist to start chatting
+                    <div class="d-flex flex-column justify-content-center align-items-center h-100 w-100">
+                        <div class="text-muted">Select a tourist to start chatting.</div>
                     </div>
                 <?php endif; ?>
             </div>

@@ -77,25 +77,25 @@
                 </div>
                 <div class="col-lg-6">
                     <div class="map-container">
-                        <img src="images/nepal map.jpg" alt="Nepal Map" class="img-fluid map-image">
-                        <div class="map-pin" style="top: 30%; left: 45%;" data-destination="Kathmandu">
-                            <i class="fas fa-map-marker-alt"></i>
+                        <img src="Everest/map.png" alt="Nepal Map" class="img-fluid map-image">
+                        <div class="map-pin" style="top: 35%; left: 20%;" data-destination="Kathmandu">
+                            <i class="fas fa-map-marker-alt" style="color: #003366;"></i>
                             <div class="pin-info">Kathmandu</div>
                         </div>
-                        <div class="map-pin" style="top: 40%; left: 35%;" data-destination="Pokhara">
-                            <i class="fas fa-map-marker-alt"></i>
+                        <div class="map-pin" style="top: 35%; left: 35%;" data-destination="Pokhara">
+                            <i class="fas fa-map-marker-alt" style="color: #003366;"></i>
                             <div class="pin-info">Pokhara</div>
                         </div>
-                        <div class="map-pin" style="top: 20%; left: 50%;" data-destination="Everest Base Camp">
-                            <i class="fas fa-map-marker-alt"></i>
+                        <div class="map-pin" style="top: 45%; left: 50%;" data-destination="Everest Base Camp">
+                            <i class="fas fa-map-marker-alt" style="color: #003366;"></i>
                             <div class="pin-info">Everest Base Camp</div>
                         </div>
-                        <div class="map-pin" style="top: 60%; left: 40%;" data-destination="Chitwan">
-                            <i class="fas fa-map-marker-alt"></i>
+                        <div class="map-pin" style="top: 45%; left: 65%;" data-destination="Chitwan">
+                            <i class="fas fa-map-marker-alt" style="color: #003366;"></i>
                             <div class="pin-info">Chitwan</div>
                         </div>
-                        <div class="map-pin" style="top: 70%; left: 30%;" data-destination="Lumbini">
-                            <i class="fas fa-map-marker-alt"></i>
+                        <div class="map-pin" style="top: 45%; left: 80%;" data-destination="Lumbini">
+                            <i class="fas fa-map-marker-alt" style="color: #003366;"></i>
                             <div class="pin-info">Lumbini</div>
                         </div>
                     </div>

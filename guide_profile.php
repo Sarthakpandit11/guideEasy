@@ -35,6 +35,18 @@ if ($guide_result->num_rows === 0) {
 
 $guide = $guide_result->fetch_assoc();
 
+// Fetch guide's categories (all locations)
+$categories = [];
+$cat_query = "SELECT gc.name FROM guide_category_mappings gcm JOIN guide_categories gc ON gcm.category_id = gc.id WHERE gcm.guide_id = ?";
+$cat_stmt = $conn->prepare($cat_query);
+$cat_stmt->bind_param("i", $guide_id);
+$cat_stmt->execute();
+$cat_result = $cat_stmt->get_result();
+while ($row = $cat_result->fetch_assoc()) {
+    $categories[] = $row['name'];
+}
+$categories = array_unique($categories); // Remove duplicates
+
 // Handle booking
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['book_guide'])) {
     $start_date = $_POST['start_date'];
@@ -124,6 +136,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['book_guide'])) {
     }
 }
 
+// Handle review submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_review']) && isset($_SESSION['user_id']) && $_SESSION['role'] === 'tourist') {
+    $rating = intval($_POST['rating'] ?? 0);
+    $review_text = trim($_POST['review_text'] ?? '');
+    $tourist_id = $_SESSION['user_id'];
+    if ($rating > 0 && $rating <= 5 && $review_text !== '') {
+        $insert_review = $conn->prepare("INSERT INTO reviews (guide_id, tourist_id, rating, review, created_at) VALUES (?, ?, ?, ?, NOW())");
+        $insert_review->bind_param("iiis", $guide_id, $tourist_id, $rating, $review_text);
+        $insert_review->execute();
+    }
+    // Refresh to show the new review
+    header("Location: guide_profile.php?id=$guide_id");
+    exit();
+}
+
+// Check if this tourist has already reviewed this guide
+$has_reviewed = false;
+if (isset($_SESSION['user_id']) && $_SESSION['role'] === 'tourist') {
+    $tourist_id = $_SESSION['user_id'];
+    $check_review = $conn->prepare("SELECT id FROM reviews WHERE guide_id = ? AND tourist_id = ?");
+    $check_review->bind_param("ii", $guide_id, $tourist_id);
+    $check_review->execute();
+    $check_review->store_result();
+    $has_reviewed = $check_review->num_rows > 0;
+}
+
+// Fetch all reviews for this guide
+$all_reviews = [];
+$reviews_stmt = $conn->prepare("SELECT r.*, u.name as tourist_name FROM reviews r JOIN users u ON r.tourist_id = u.id WHERE r.guide_id = ? ORDER BY r.created_at DESC");
+$reviews_stmt->bind_param("i", $guide_id);
+$reviews_stmt->execute();
+$reviews_result = $reviews_stmt->get_result();
+while ($row = $reviews_result->fetch_assoc()) {
+    $all_reviews[] = $row;
+}
+
 // Set default images if not provided
 $profile_image = !empty($guide['profile_picture']) ? $guide['profile_picture'] : 'images/default_profile.png';
 $cover_image = !empty($guide['cover_image']) ? $guide['cover_image'] : 'images/default_cover.png';
@@ -139,35 +187,67 @@ $cover_image = !empty($guide['cover_image']) ? $guide['cover_image'] : 'images/d
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .profile-header {
-            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('<?php echo $cover_image; ?>');
-            background-size: cover;
-            background-position: center;
+            background: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%);
             color: white;
-            padding: 100px 0 50px;
-            margin-top: -20px;
+            padding: 120px 0 40px 0; /* More top padding for fixed navbar and image */
+            text-align: center;
+            position: relative;
         }
         .profile-image {
-            width: 150px;
-            height: 150px;
+            width: 120px;
+            height: 120px;
             border-radius: 50%;
-            border: 5px solid white;
-            margin-top: -75px;
+            border: 5px solid #fff;
             object-fit: cover;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            margin-top: 0;
+            background: #fff;
         }
-        .info-card {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
+        .profile-header h1 {
+            margin-top: 15px;
+            font-size: 2.2rem;
+            font-weight: 700;
         }
-        .skill-badge {
-            background: #f8f9fa;
-            padding: 5px 15px;
-            border-radius: 20px;
-            margin-right: 10px;
-            margin-bottom: 10px;
-            display: inline-block;
+        .profile-header .lead {
+            font-size: 1.2rem;
+            color: #e0e0e0;
+        }
+        .card {
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+            margin-bottom: 24px;
+            padding: 24px;
+            background: #fff;
+        }
+        .card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 12px;
+        }
+        .btn-primary, .btn-outline-primary {
+            border-radius: 25px;
+            padding: 10px 28px;
+            font-weight: 600;
+            transition: background 0.2s, color 0.2s;
+        }
+        .btn-primary:hover, .btn-outline-primary:hover {
+            background: #4e54c8;
+            color: #fff;
+        }
+        .booking-form input, .booking-form label {
+            border-radius: 8px;
+        }
+        @media (max-width: 768px) {
+            .profile-header {
+                padding: 40px 0 20px 0;
+            }
+            .profile-image {
+                width: 90px;
+                height: 90px;
+                margin-top: -45px;
+            }
+            .card {
+                padding: 16px;
+            }
         }
     </style>
 </head>
@@ -180,7 +260,9 @@ $cover_image = !empty($guide['cover_image']) ? $guide['cover_image'] : 'images/d
             <img src="<?php echo $profile_image; ?>" 
                  alt="<?php echo htmlspecialchars($guide['name']); ?>" class="profile-image">
             <h1 class="mt-3"><?php echo htmlspecialchars($guide['name']); ?></h1>
-            <p class="lead"><?php echo htmlspecialchars($guide['specialization'] ?? 'Professional Guide'); ?></p>
+            <p class="lead">
+                <?php echo htmlspecialchars($guide['specialization'] ?? 'Professional Guide'); ?>
+            </p>
             <div class="rating mb-3">
                 <?php
                 $avg_rating = round($guide['avg_rating'] ?? 0, 1);
@@ -214,6 +296,19 @@ $cover_image = !empty($guide['cover_image']) ? $guide['cover_image'] : 'images/d
                 <div class="info-card">
                     <h3>About</h3>
                     <p><?php echo htmlspecialchars($guide['bio'] ?? 'No bio available'); ?></p>
+                    <div class="mb-2">
+                        <strong>Languages:</strong> <?php echo htmlspecialchars($guide['languages'] ?? 'Not specified'); ?>
+                    </div>
+                    <div class="mb-2">
+                        <strong>Tour Categories:</strong>
+                        <?php if (!empty($categories)): ?>
+                            <?php foreach ($categories as $cat): ?>
+                                <span class="badge bg-info text-dark mb-1"><?php echo htmlspecialchars($cat); ?></span>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <span class="text-muted">No categories set</span>
+                        <?php endif; ?>
+                    </div>
                 </div>
 
                 <!-- Experience Section -->
@@ -227,14 +322,84 @@ $cover_image = !empty($guide['cover_image']) ? $guide['cover_image'] : 'images/d
                     <h3>Skills & Specializations</h3>
                     <div>
                         <?php
-                        $skills = explode(',', $guide['skills'] ?? '');
-                        foreach ($skills as $skill) {
-                            if (trim($skill)) {
-                                echo '<span class="skill-badge">' . htmlspecialchars(trim($skill)) . '</span>';
+                        $skills = array_filter(array_map('trim', explode(',', $guide['skills'] ?? '')));
+                        if (!empty($skills)) {
+                            foreach ($skills as $skill) {
+                                echo '<span class="badge bg-secondary me-1 mb-1">' . htmlspecialchars($skill) . '</span>';
                             }
+                        } else {
+                            echo '<span class="text-muted">No skills or specializations listed.</span>';
                         }
                         ?>
                     </div>
+                </div>
+
+                <!-- Reviews Section -->
+                <div class="info-card">
+                    <h3>Reviews</h3>
+                    <?php if (isset($_SESSION['user_id']) && $_SESSION['role'] === 'tourist' && !$has_reviewed): ?>
+                        <form method="POST" class="mb-4">
+                            <div class="mb-2">
+                                <label for="rating" class="form-label"><strong>Your Rating:</strong></label><br>
+                                <span id="star-rating">
+                                    <?php for ($i = 1; $i <= 5; $i++): ?>
+                                        <input type="radio" name="rating" id="star<?php echo $i; ?>" value="<?php echo $i; ?>" style="display:none;">
+                                        <label for="star<?php echo $i; ?>" style="font-size:2rem; color:#ffc107; cursor:pointer;">&#9733;</label>
+                                    <?php endfor; ?>
+                                </span>
+                            </div>
+                            <div class="mb-2">
+                                <label for="review_text" class="form-label"><strong>Your Review:</strong></label>
+                                <textarea name="review_text" id="review_text" class="form-control" rows="3" required></textarea>
+                            </div>
+                            <button type="submit" name="submit_review" class="btn btn-primary">Submit Review</button>
+                        </form>
+                        <script>
+                        // Star rating highlight
+                        document.querySelectorAll('#star-rating label').forEach(function(label, idx) {
+                            label.addEventListener('mouseover', function() {
+                                for (let i = 0; i <= idx; i++) {
+                                    document.querySelectorAll('#star-rating label')[i].style.color = '#ffc107';
+                                }
+                                for (let i = idx + 1; i < 5; i++) {
+                                    document.querySelectorAll('#star-rating label')[i].style.color = '#e4e5e9';
+                                }
+                            });
+                            label.addEventListener('mouseout', function() {
+                                let checked = document.querySelector('#star-rating input:checked');
+                                let val = checked ? parseInt(checked.value) : 0;
+                                for (let i = 0; i < 5; i++) {
+                                    document.querySelectorAll('#star-rating label')[i].style.color = (i < val) ? '#ffc107' : '#e4e5e9';
+                                }
+                            });
+                            label.addEventListener('click', function() {
+                                document.getElementById('star' + (idx + 1)).checked = true;
+                            });
+                        });
+                        </script>
+                    <?php elseif (isset($_SESSION['user_id']) && $_SESSION['role'] === 'tourist'): ?>
+                        <div class="alert alert-info">You have already reviewed this guide.</div>
+                    <?php endif; ?>
+                    <?php if (!empty($all_reviews)): ?>
+                        <?php foreach ($all_reviews as $review): ?>
+                            <div class="border rounded p-2 mb-2">
+                                <div class="d-flex align-items-center mb-1">
+                                    <strong><?php echo htmlspecialchars($review['tourist_name']); ?></strong>
+                                    <span class="ms-2 text-warning">
+                                        <?php for ($i = 1; $i <= 5; $i++): ?>
+                                            <i class="fa<?php echo $i <= $review['rating'] ? 's' : 'r'; ?> fa-star"></i>
+                                        <?php endfor; ?>
+                                    </span>
+                                    <span class="ms-2 text-muted" style="font-size:0.9em;">
+                                        <?php echo date('M d, Y', strtotime($review['created_at'])); ?>
+                                    </span>
+                                </div>
+                                <div><?php echo nl2br(htmlspecialchars($review['review'])); ?></div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <div class="text-muted">No reviews yet.</div>
+                    <?php endif; ?>
                 </div>
             </div>
 

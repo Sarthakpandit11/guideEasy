@@ -49,7 +49,7 @@
                 
                 <!-- Hero Image -->
                 <div class="destination-hero mb-4">
-                    <img src="images/everest.jpg" alt="Everest Region" class="img-fluid rounded">
+                    <img src="Everest/EverestRegion.png" alt="Everest Region" class="img-fluid rounded">
                 </div>
 
                 <!-- Overview -->
@@ -64,28 +64,28 @@
                     <div class="row">
                         <div class="col-md-6 mb-4">
                             <div class="activity-card">
-                                <img src="images/everest-base-camp.jpg" alt="Everest Base Camp" class="img-fluid rounded">
+                                <img src="Everest/EverestBaseCampTrek.png" alt="Everest Base Camp" class="img-fluid rounded">
                                 <h3>Everest Base Camp Trek</h3>
                                 <p>Embark on the iconic trek to Everest Base Camp, experiencing the majestic Himalayas and Sherpa culture.</p>
                             </div>
                         </div>
                         <div class="col-md-6 mb-4">
                             <div class="activity-card">
-                                <img src="images/kala-patthar.jpg" alt="Kala Patthar" class="img-fluid rounded">
+                                <img src="Everest/KalaPatthar.png" alt="Kala Patthar" class="img-fluid rounded">
                                 <h3>Kala Patthar</h3>
                                 <p>Hike to this famous viewpoint for the best panoramic views of Mount Everest and surrounding peaks.</p>
                             </div>
                         </div>
                         <div class="col-md-6 mb-4">
                             <div class="activity-card">
-                                <img src="images/namche-bazaar.jpg" alt="Namche Bazaar" class="img-fluid rounded">
+                                <img src="Everest/NamcheBazaar.png" alt="Namche Bazaar" class="img-fluid rounded">
                                 <h3>Namche Bazaar</h3>
                                 <p>Visit the bustling Sherpa capital and acclimatization point for Everest treks.</p>
                             </div>
                         </div>
                         <div class="col-md-6 mb-4">
                             <div class="activity-card">
-                                <img src="images/tengboche-monastery.jpg" alt="Tengboche Monastery" class="img-fluid rounded">
+                                <img src="Everest/TengbocheMonastery.png" alt="Tengboche Monastery" class="img-fluid rounded">
                                 <h3>Tengboche Monastery</h3>
                                 <p>Explore the largest Buddhist monastery in the Khumbu region with stunning mountain views.</p>
                             </div>

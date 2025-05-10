@@ -49,7 +49,7 @@
                 
                 <!-- Hero Image -->
                 <div class="destination-hero mb-4">
-                    <img src="images/pokhara.jpg" alt="Pokhara" class="img-fluid rounded">
+                    <img src="pokhara/pokhara.png" alt="Pokhara" class="img-fluid rounded">
                 </div>
 
                 <!-- Overview -->
@@ -64,28 +64,28 @@
                     <div class="row">
                         <div class="col-md-6 mb-4">
                             <div class="activity-card">
-                                <img src="images/phewa-lake.jpg" alt="Phewa Lake" class="img-fluid rounded">
+                                <img src="pokhara/phewalake.png" alt="Phewa Lake" class="img-fluid rounded">
                                 <h3>Phewa Lake</h3>
                                 <p>Enjoy boating on Nepal's second-largest lake with stunning views of the Annapurna range reflected in its waters.</p>
                             </div>
                         </div>
                         <div class="col-md-6 mb-4">
                             <div class="activity-card">
-                                <img src="images/sarangkot.jpg" alt="Sarangkot" class="img-fluid rounded">
+                                <img src="pokhara/sarangkot.png" alt="Sarangkot" class="img-fluid rounded">
                                 <h3>Sarangkot Viewpoint</h3>
                                 <p>Witness breathtaking sunrise views over the Annapurna range from this popular viewpoint.</p>
                             </div>
                         </div>
                         <div class="col-md-6 mb-4">
                             <div class="activity-card">
-                                <img src="images/paragliding.jpg" alt="Paragliding" class="img-fluid rounded">
+                                <img src="pokhara/paragliding.png" alt="Paragliding" class="img-fluid rounded">
                                 <h3>Paragliding</h3>
                                 <p>Experience the thrill of paragliding over the beautiful Pokhara valley with professional instructors.</p>
                             </div>
                         </div>
                         <div class="col-md-6 mb-4">
                             <div class="activity-card">
-                                <img src="images/davis-falls.jpg" alt="Davis Falls" class="img-fluid rounded">
+                                <img src="pokhara/DavisFalls.png" alt="Davis Falls" class="img-fluid rounded">
                                 <h3>Davis Falls</h3>
                                 <p>Visit this unique waterfall that disappears into an underground tunnel beneath the city.</p>
                             </div>

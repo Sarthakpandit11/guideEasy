@@ -19,22 +19,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_id'])) {
     // Delete related records
     $conn->begin_transaction();
     try {
+        // Guide settings
+        if (!$conn->query("DELETE FROM guide_settings WHERE user_id = $user_id")) throw new Exception($conn->error);
         // Guide category mappings
-        $conn->query("DELETE FROM guide_category_mappings WHERE guide_id = $user_id");
-        // Bookings (as guide, tourist, or user)
-        $conn->query("DELETE FROM bookings WHERE guide_id = $user_id OR tourist_id = $user_id OR user_id = $user_id");
+        if (!$conn->query("DELETE FROM guide_category_mappings WHERE guide_id = $user_id")) throw new Exception($conn->error);
+        // Get all booking IDs for this user (as guide or tourist)
+        $booking_ids_result = $conn->query("SELECT id FROM bookings WHERE guide_id = $user_id OR tourist_id = $user_id");
+        $booking_ids = [];
+        while ($booking_ids_result && $row = $booking_ids_result->fetch_assoc()) {
+            $booking_ids[] = $row['id'];
+        }
+        // Delete notifications for these bookings
+        if (!empty($booking_ids)) {
+            $ids_str = implode(',', array_map('intval', $booking_ids));
+            if (!$conn->query("DELETE FROM notifications WHERE booking_id IN ($ids_str)")) throw new Exception($conn->error);
+        }
+        // Delete all notifications for this user (by guide_id or tourist_id)
+        if (!$conn->query("DELETE FROM notifications WHERE guide_id = $user_id OR tourist_id = $user_id")) throw new Exception($conn->error);
+        // Bookings (as guide or tourist)
+        if (!$conn->query("DELETE FROM bookings WHERE guide_id = $user_id OR tourist_id = $user_id")) throw new Exception($conn->error);
         // Messages
-        $conn->query("DELETE FROM messages WHERE sender_id = $user_id OR receiver_id = $user_id");
-        // Notifications
-        $conn->query("DELETE FROM notifications WHERE guide_id = $user_id OR tourist_id = $user_id");
+        if (!$conn->query("DELETE FROM messages WHERE sender_id = $user_id OR receiver_id = $user_id")) throw new Exception($conn->error);
         // Reviews (if you have a reviews table)
         if ($conn->query("SHOW TABLES LIKE 'reviews'")->num_rows) {
-            $conn->query("DELETE FROM reviews WHERE guide_id = $user_id OR user_id = $user_id");
+            if (!$conn->query("DELETE FROM reviews WHERE guide_id = $user_id")) throw new Exception($conn->error);
         }
         // Now delete the user
         $stmt = $conn->prepare('DELETE FROM users WHERE id = ?');
         $stmt->bind_param('i', $user_id);
         $success = $stmt->execute();
+        if (!$success) throw new Exception($stmt->error);
         $conn->commit();
         echo json_encode(['success' => $success]);
         exit();

@@ -27,7 +27,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $user = $result->fetch_assoc();
         if (password_verify($password, $user['password'])) {
             // Only allow guide login if approved
-            if ($user['role'] === 'guide' && $user['status'] !== 'approved') {
+            if ($user['status'] !== 'approved') {
                 header("Location: login.php?error=not_approved");
                 exit();
             }

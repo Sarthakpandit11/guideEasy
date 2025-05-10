@@ -12,14 +12,27 @@ $user_id = $_SESSION['user_id'];
 $user_role = $_SESSION['role'];
 
 // Mark notifications as read when viewing the page
-$mark_read_query = "UPDATE notifications SET is_read = 1 WHERE user_id = ?";
+if ($user_role === 'guide') {
+    $mark_read_query = "UPDATE notifications SET is_read = 1 WHERE guide_id = ?";
+} else {
+    $mark_read_query = "UPDATE notifications SET is_read = 1 WHERE tourist_id = ?";
+}
 $stmt = $conn->prepare($mark_read_query);
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
 
+// Handle search
+$search = isset($_GET['search']) ? trim($_GET['search']) : '';
+$search_sql = '';
+$search_params = [];
+if ($search !== '') {
+    $search_sql = " AND (n.message LIKE ? OR u.name LIKE ? OR b.destination LIKE ?)";
+    $search_term = "%$search%";
+    $search_params = [$search_term, $search_term, $search_term];
+}
+
 // Get notifications based on user role
 if ($user_role === 'guide') {
-    // For guides: show booking requests and tourist messages
     $notifications_query = "SELECT n.*, 
                           u.name as tourist_name,
                           b.destination,
@@ -28,10 +41,10 @@ if ($user_role === 'guide') {
                    FROM notifications n
                    LEFT JOIN users u ON n.tourist_id = u.id
                    LEFT JOIN bookings b ON n.booking_id = b.id
-                   WHERE n.guide_id = ?
+                   WHERE n.guide_id = ?" . $search_sql . "
                    ORDER BY n.created_at DESC";
+    $params = array_merge([$user_id], $search_params);
 } else {
-    // For tourists: show booking confirmations and guide messages
     $notifications_query = "SELECT n.*, 
                           u.name as guide_name,
                           b.destination,
@@ -40,12 +53,16 @@ if ($user_role === 'guide') {
                    FROM notifications n
                    LEFT JOIN users u ON n.guide_id = u.id
                    LEFT JOIN bookings b ON n.booking_id = b.id
-                   WHERE n.tourist_id = ?
+                   WHERE n.tourist_id = ?" . $search_sql . "
                    ORDER BY n.created_at DESC";
+    $params = array_merge([$user_id], $search_params);
 }
 
 $stmt = $conn->prepare($notifications_query);
-$stmt->bind_param("i", $user_id);
+// Dynamically bind params
+$types = str_repeat('s', count($params));
+$types[0] = 'i'; // first param is always user_id (int)
+$stmt->bind_param($types, ...$params);
 $stmt->execute();
 $notifications_result = $stmt->get_result();
 ?>
@@ -90,6 +107,9 @@ $notifications_result = $stmt->get_result();
             padding: 10px;
             border-radius: 5px;
             margin-top: 10px;
+        }
+        .search-bar {
+            max-width: 350px;
         }
     </style>
 </head>
@@ -137,6 +157,10 @@ $notifications_result = $stmt->get_result();
                 <i class="fas fa-trash"></i> Clear All
             </a>
         </div>
+        <form class="mb-4 d-flex" method="get" action="">
+            <input type="text" name="search" class="form-control me-2 search-bar" placeholder="Search notifications..." value="<?php echo htmlspecialchars($search); ?>">
+            <button type="submit" class="btn btn-primary">Search</button>
+        </form>
 
         <?php if ($notifications_result->num_rows > 0): ?>
             <div class="notifications-list">

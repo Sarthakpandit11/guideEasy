@@ -9,7 +9,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'tourist') {
 }
 
 // Fetch featured guides from the database
-$featured_guides_query = "SELECT u.*, gs.availability_status, gs.specialization, gs.rate_per_hour, gs.bio,
+$featured_guides_query = "SELECT u.*, gs.profile_picture, gs.availability_status, gs.specialization, gs.rate_per_hour, gs.bio,
                          (SELECT AVG(rating) FROM reviews WHERE guide_id = u.id) as avg_rating,
                          (SELECT COUNT(*) FROM reviews WHERE guide_id = u.id) as total_reviews
                          FROM users u
@@ -18,6 +18,14 @@ $featured_guides_query = "SELECT u.*, gs.availability_status, gs.specialization,
                          ORDER BY avg_rating DESC
                          LIMIT 2";
 $featured_guides_result = $conn->query($featured_guides_query);
+
+// Fetch all packages with guide info
+$all_packages = [];
+$pkg_query = "SELECT p.*, u.name as guide_name, gs.profile_picture FROM packages p JOIN users u ON p.guide_id = u.id LEFT JOIN guide_settings gs ON u.id = gs.user_id ORDER BY p.created_at DESC";
+$pkg_result = $conn->query($pkg_query);
+while ($row = $pkg_result->fetch_assoc()) {
+    $all_packages[] = $row;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -29,26 +37,49 @@ $featured_guides_result = $conn->query($featured_guides_query);
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            overflow-x: hidden;
+            background: #fff;
+        }
         .hero-section {
             position: relative;
             height: 100vh;
             overflow: hidden;
-            margin-top: -80px; /* Compensate for fixed navbar */
+            margin-top: -80px;
+            width: 100vw;
+            left: 50%;
+            right: 50%;
+            margin-left: -50vw;
+            margin-right: -50vw;
+            padding: 0;
         }
-        .carousel {
-            height: 100%;
-        }
-        .carousel-inner {
-            height: 100%;
-        }
-        .carousel-item {
-            height: 100%;
+        .carousel,
+        .carousel-inner,
+        .carousel-item,
+        .carousel-item img {
+            width: 100vw !important;
+            min-width: 100vw !important;
+            max-width: 100vw !important;
+            left: 0;
+            margin: 0;
+            padding: 0;
         }
         .carousel-item img {
             object-fit: cover;
-            height: 100%;
-            width: 100%;
-            min-height: 100vh;
+            height: 100vh;
+            width: 100vw !important;
+            min-width: 100vw !important;
+            max-width: 100vw !important;
+            display: block;
+        }
+        .featured-guides, .popular-destinations, footer {
+            width: 100vw;
+            margin-left: calc(50% - 50vw);
+            margin-right: calc(50% - 50vw);
         }
         .search-container {
             position: absolute;
@@ -122,7 +153,7 @@ $featured_guides_result = $conn->query($featured_guides_query);
 <body>
     <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
-        <div class="container">
+        <div class="container-fluid">
             <a class="navbar-brand" href="tourist_dashboard.php">
                 <img src="images/logo.png" alt="Guide Easy Logo" height="40" class="d-inline-block align-text-top me-2">
                 Guide Easy
@@ -200,7 +231,7 @@ $featured_guides_result = $conn->query($featured_guides_query);
 
     <!-- Featured Guides Section -->
     <section class="featured-guides">
-        <div class="container">
+        <div class="container-fluid">
             <h2 class="text-center mb-5">Featured Guides</h2>
             <div class="row">
                 <?php if ($featured_guides_result->num_rows > 0): ?>
@@ -209,7 +240,7 @@ $featured_guides_result = $conn->query($featured_guides_query);
                         <div class="guide-card">
                             <div class="row">
                                 <div class="col-md-4">
-                                    <img src="<?php echo !empty($guide['profile_image']) ? $guide['profile_image'] : 'images/default_guide.jpg'; ?>" 
+                                    <img src="<?php echo !empty($guide['profile_picture']) ? $guide['profile_picture'] : 'images/default_guide.jpg'; ?>" 
                                          alt="<?php echo htmlspecialchars($guide['name']); ?>" class="img-fluid rounded-circle">
                                 </div>
                                 <div class="col-md-8">
@@ -236,9 +267,34 @@ $featured_guides_result = $conn->query($featured_guides_query);
                                         <?php echo htmlspecialchars($guide['specialization'] ?? 'Not specified'); ?>
                                     </p>
                                     <p class="mb-3"><?php echo htmlspecialchars($guide['bio'] ?? ''); ?></p>
+                                    <div class="mb-2">
+                                        <strong>Languages:</strong> <?php echo htmlspecialchars($guide['languages'] ?? 'N/A'); ?>
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>Tour Categories:</strong>
+                                        <?php
+                                        $cat_query = "SELECT gc.name FROM guide_category_mappings gcm JOIN guide_categories gc ON gcm.category_id = gc.id WHERE gcm.guide_id = ?";
+                                        $cat_stmt = $conn->prepare($cat_query);
+                                        $cat_stmt->bind_param("i", $guide['id']);
+                                        $cat_stmt->execute();
+                                        $cat_result = $cat_stmt->get_result();
+                                        $categories = [];
+                                        while ($row = $cat_result->fetch_assoc()) {
+                                            $categories[] = $row['name'];
+                                        }
+                                        $categories = array_unique($categories);
+                                        if (!empty($categories)) {
+                                            foreach ($categories as $cat) {
+                                                echo '<span class="badge bg-info text-dark mb-1 me-1">' . htmlspecialchars($cat) . '</span>';
+                                            }
+                                        } else {
+                                            echo '<span class="text-muted">No categories</span>';
+                                        }
+                                        ?>
+                                    </div>
                                     <div class="d-flex justify-content-between align-items-center">
                                         <span class="badge bg-success">$<?php echo number_format($guide['rate_per_hour'] ?? 0, 2); ?>/hour</span>
-                                        <a href="book_guide.php?id=<?php echo $guide['id']; ?>" class="btn btn-primary btn-sm">
+                                        <a href="guide_profile.php?id=<?php echo $guide['id']; ?>" class="btn btn-primary btn-sm">
                                             <i class="fas fa-calendar-check"></i> Book Now
                                         </a>
                                     </div>
@@ -253,15 +309,57 @@ $featured_guides_result = $conn->query($featured_guides_query);
                     </div>
                 <?php endif; ?>
             </div>
-            <div class="text-center mt-4">
+            <div class="text-center mt-4 mb-5">
                 <a href="all_guides.php" class="btn btn-outline-primary">View All Guides</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Packages Section -->
+    <section class="py-5" style="background:#f4f8fb;">
+        <div class="container-fluid">
+            <h2 class="text-center mb-5">Guide Packages</h2>
+            <div class="row">
+                <?php if (count($all_packages) === 0): ?>
+                    <div class="col-12 text-center text-muted">No packages available yet.</div>
+                <?php else: ?>
+                    <?php foreach ($all_packages as $pkg): ?>
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100 shadow-sm border-0">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <img src="<?php echo !empty($pkg['profile_picture']) ? $pkg['profile_picture'] : 'images/default_guide.jpg'; ?>" alt="<?php echo htmlspecialchars($pkg['guide_name']); ?>" class="rounded-circle me-3" width="50" height="50">
+                                        <div>
+                                            <div class="fw-bold"><?php echo htmlspecialchars($pkg['guide_name']); ?></div>
+                                            <div class="text-muted" style="font-size:0.95em;">Guide</div>
+                                        </div>
+                                    </div>
+                                    <h5 class="fw-bold mb-1"><?php echo htmlspecialchars($pkg['title']); ?></h5>
+                                    <div class="mb-2 d-flex align-items-center gap-2">
+                                        <span class="badge bg-success"><i class="fas fa-dollar-sign"></i> <?php echo number_format($pkg['price'],2); ?></span>
+                                        <span class="badge bg-info text-dark"><i class="fas fa-clock"></i> <?php echo htmlspecialchars($pkg['duration']); ?></span>
+                                    </div>
+                                    <div class="mb-2" style="font-size:0.95em; color:#555; min-height:40px;">
+                                        <?php echo nl2br(htmlspecialchars($pkg['description'])); ?>
+                                    </div>
+                                    <div class="text-end mb-2" style="font-size:0.85em; color:#888;">
+                                        <i class="far fa-calendar-alt"></i> <?php echo date('M d, Y', strtotime($pkg['created_at'])); ?>
+                                    </div>
+                                    <div class="d-grid">
+                                        <a href="guide_profile.php?id=<?php echo $pkg['guide_id']; ?>" class="btn btn-primary btn-sm"><i class="fas fa-user"></i> Contact Guide</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </div>
         </div>
     </section>
 
     <!-- Popular Destinations Section -->
     <section class="popular-destinations">
-        <div class="container">
+        <div class="container-fluid">
             <h2 class="text-center mb-5">Popular Destinations</h2>
             <div class="row">
                 <div class="col-md-4 mb-4">
@@ -297,7 +395,7 @@ $featured_guides_result = $conn->query($featured_guides_query);
 
     <!-- Footer -->
     <footer class="bg-dark text-light py-4 mt-5">
-        <div class="container">
+        <div class="container-fluid">
             <div class="row">
                 <div class="col-md-6">
                     <h5>Guide Easy</h5>

@@ -27,6 +27,8 @@
             border-radius: 10px;
             box-shadow: 0 0 20px rgba(0,0,0,0.1);
             background-color: #fff;
+            position: relative;
+            z-index: 1;
         }
         .form-control:focus {
             border-color: #28a745;
@@ -46,9 +48,26 @@
             flex-shrink: 0;
             width: 100%;
         }
+        #bg-video {
+            position: fixed;
+            top: 0;
+            left: 0;
+            min-width: 100vw;
+            min-height: 100vh;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            z-index: -1;
+            opacity: 1;
+            background: #000;
+        }
     </style>
 </head>
 <body>
+    <video autoplay loop muted playsinline id="bg-video">
+        <source src="video.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
     <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
         <div class="container">

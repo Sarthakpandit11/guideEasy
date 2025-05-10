@@ -8,14 +8,14 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     exit();
 }
 
-// Handle guide approval/cancellation
+// Handle user approval/cancellation
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['guide_action'], $_POST['guide_id'])) {
-    $guide_id = intval($_POST['guide_id']);
+    $user_id = intval($_POST['guide_id']);
     $action = $_POST['guide_action'];
     if ($action === 'approve') {
-        $conn->query("UPDATE users SET status = 'approved' WHERE id = $guide_id AND role = 'guide'");
+        $conn->query("UPDATE users SET status = 'approved' WHERE id = $user_id");
     } elseif ($action === 'cancel') {
-        $conn->query("UPDATE users SET status = 'cancelled' WHERE id = $guide_id AND role = 'guide'");
+        $conn->query("UPDATE users SET status = 'cancelled' WHERE id = $user_id");
     }
     // Refresh to avoid resubmission
     header("Location: admin_dashboard.php");
@@ -160,7 +160,7 @@ $users_result = $conn->query($users_query);
                                         </span>
                                     </td>
                                     <td>
-                                        <?php if ($user['role'] === 'guide' && $user['status'] !== 'approved'): ?>
+                                        <?php if ($user['status'] === 'pending'): ?>
                                             <form method="POST" class="d-inline">
                                                 <input type="hidden" name="guide_id" value="<?php echo $user['id']; ?>">
                                                 <button type="submit" name="guide_action" value="approve" class="btn btn-success btn-sm">Approve</button>
@@ -220,7 +220,7 @@ $users_result = $conn->query($users_query);
                         if (data.success) {
                             document.getElementById('user-row-' + userId).remove();
                         } else {
-                            alert('Failed to delete user.');
+                            alert('Failed to delete user.' + (data.error ? '\n' + data.error : ''));
                         }
                     })
                     .catch(() => alert('Failed to delete user.'));

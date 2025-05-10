@@ -33,13 +33,26 @@ $stmt->bind_param("i", $guide_id);
 $stmt->execute();
 $notifications_result = $stmt->get_result();
 
-// Fetch guide's data
-$query = "SELECT * FROM users WHERE id = ?";
+// Fetch guide's data (join guide_settings for profile_picture, rate_per_hour, languages, location)
+$query = "SELECT u.*, gs.profile_picture, gs.rate_per_hour, gs.languages, gs.location FROM users u LEFT JOIN guide_settings gs ON u.id = gs.user_id WHERE u.id = ?";
 $stmt = $conn->prepare($query);
 $stmt->bind_param("i", $guide_id);
 $stmt->execute();
 $result = $stmt->get_result();
 $guide = $result->fetch_assoc();
+
+// Fetch guide's categories for their current location
+$categories = [];
+if (!empty($guide['location'])) {
+    $cat_query = "SELECT gc.name FROM guide_category_mappings gcm JOIN guide_categories gc ON gcm.category_id = gc.id WHERE gcm.guide_id = ? AND gcm.location = ?";
+    $cat_stmt = $conn->prepare($cat_query);
+    $cat_stmt->bind_param("is", $guide_id, $guide['location']);
+    $cat_stmt->execute();
+    $cat_result = $cat_stmt->get_result();
+    while ($row = $cat_result->fetch_assoc()) {
+        $categories[] = $row['name'];
+    }
+}
 
 // Fetch guide's bookings
 $bookings_query = "SELECT b.*, u.name as tourist_name, u.email as tourist_email 
@@ -74,6 +87,34 @@ $ratings_stmt->bind_param("i", $guide_id);
 $ratings_stmt->execute();
 $ratings_result = $ratings_stmt->get_result();
 $ratings = $ratings_result->fetch_assoc();
+
+// Handle package creation
+$package_error = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_package'])) {
+    $title = trim($_POST['title']);
+    $description = trim($_POST['description']);
+    $price = floatval($_POST['price']);
+    $duration = trim($_POST['duration']);
+    if ($title && $price > 0) {
+        $stmt = $conn->prepare("INSERT INTO packages (guide_id, title, description, price, duration) VALUES (?, ?, ?, ?, ?)");
+        $stmt->bind_param("issds", $guide_id, $title, $description, $price, $duration);
+        $stmt->execute();
+        header("Location: guide_dashboard.php");
+        exit();
+    } else {
+        $package_error = 'Title and price are required.';
+    }
+}
+
+// Fetch this guide's packages
+$my_packages = [];
+$pkg_stmt = $conn->prepare("SELECT * FROM packages WHERE guide_id = ? ORDER BY created_at DESC");
+$pkg_stmt->bind_param("i", $guide_id);
+$pkg_stmt->execute();
+$pkg_result = $pkg_stmt->get_result();
+while ($row = $pkg_result->fetch_assoc()) {
+    $my_packages[] = $row;
+}
 ?>
 
 <!DOCTYPE html>
@@ -238,6 +279,24 @@ $ratings = $ratings_result->fetch_assoc();
                                  alt="Profile Image" class="profile-image">
                             <h3><?php echo htmlspecialchars($guide['name']); ?></h3>
                             <p class="text-muted">Professional Tour Guide</p>
+                            <div class="mb-2">
+                                <strong>Tour Categories:</strong><br>
+                                <?php if (!empty($categories)): ?>
+                                    <?php foreach ($categories as $cat): ?>
+                                        <span class="badge bg-info text-dark mb-1"><?php echo htmlspecialchars($cat); ?></span>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <span class="text-muted">No categories set</span>
+                                <?php endif; ?>
+                            </div>
+                            <div class="mb-2">
+                                <strong>Price per Hour:</strong> 
+                                <?php echo isset($guide['rate_per_hour']) ? '$' . htmlspecialchars($guide['rate_per_hour']) : 'N/A'; ?>
+                            </div>
+                            <div class="mb-2">
+                                <strong>Languages:</strong> 
+                                <?php echo !empty($guide['languages']) ? htmlspecialchars($guide['languages']) : 'N/A'; ?>
+                            </div>
                             <div class="rating mb-3">
                                 <?php
                                 $avg_rating = round($ratings['avg_rating'] ?? 0, 1);
@@ -366,6 +425,74 @@ $ratings = $ratings_result->fetch_assoc();
             </div>
         </div>
     </section>
+
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Create a New Package</h5>
+                    </div>
+                    <div class="card-body">
+                        <?php if ($package_error): ?>
+                            <div class="alert alert-danger"><?php echo $package_error; ?></div>
+                        <?php endif; ?>
+                        <form method="POST">
+                            <div class="mb-3">
+                                <label class="form-label">Title</label>
+                                <input type="text" name="title" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Description</label>
+                                <textarea name="description" class="form-control" rows="2"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Price (USD)</label>
+                                <input type="number" name="price" class="form-control" step="0.01" min="1" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Duration (e.g. 3 days, 1 week)</label>
+                                <input type="text" name="duration" class="form-control">
+                            </div>
+                            <button type="submit" name="create_package" class="btn btn-success">Create Package</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="card" style="background:#f4f8fb;">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">My Packages</h5>
+                    </div>
+                    <div class="card-body">
+                        <?php if (count($my_packages) === 0): ?>
+                            <div class="text-muted">You have not created any packages yet.</div>
+                        <?php else: ?>
+                            <div class="row">
+                                <?php foreach ($my_packages as $pkg): ?>
+                                    <div class="col-md-6 mb-4">
+                                        <div class="card shadow-sm h-100 border-0">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <h6 class="fw-bold mb-0"><?php echo htmlspecialchars($pkg['title']); ?></h6>
+                                                    <span class="badge bg-success"><i class="fas fa-dollar-sign"></i> <?php echo number_format($pkg['price'],2); ?></span>
+                                                </div>
+                                                <div class="mb-2 text-muted" style="font-size:0.95em;"><i class="fas fa-clock"></i> <?php echo htmlspecialchars($pkg['duration']); ?></div>
+                                                <div class="mb-2" style="font-size:0.95em; color:#555; min-height:40px;">
+                                                    <?php echo nl2br(htmlspecialchars($pkg['description'])); ?>
+                                                </div>
+                                                <div class="text-end" style="font-size:0.85em; color:#888;">
+                                                    <i class="far fa-calendar-alt"></i> <?php echo date('M d, Y', strtotime($pkg['created_at'])); ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Footer -->
     <footer class="bg-dark text-light py-4">

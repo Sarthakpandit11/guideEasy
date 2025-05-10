@@ -28,3 +28,4 @@ INSERT INTO guide_categories (name, description) VALUES
 CREATE INDEX idx_guide_category_location ON guide_category_mappings(location);
 CREATE INDEX idx_guide_category_guide ON guide_category_mappings(guide_id);
 CREATE INDEX idx_guide_category_category ON guide_category_mappings(category_id); 
+
