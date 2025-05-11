@@ -59,8 +59,7 @@ $bookings_query = "SELECT b.*, u.name as tourist_name, u.email as tourist_email
                   FROM bookings b 
                   JOIN users u ON b.tourist_id = u.id 
                   WHERE b.guide_id = ? 
-                  ORDER BY b.start_date DESC 
-                  LIMIT 5";
+                  ORDER BY b.start_date DESC";
 $bookings_stmt = $conn->prepare($bookings_query);
 $bookings_stmt->bind_param("i", $guide_id);
 $bookings_stmt->execute();
@@ -367,6 +366,9 @@ while ($row = $pkg_result->fetch_assoc()) {
                                                 <p class="mb-0 text-muted">
                                                     <i class="fas fa-users"></i> 
                                                     <?php echo $booking['number_of_people']; ?> people
+                                                </p>
+                                                <p class="mb-0 text-muted">
+                                                    <i class="fas fa-dollar-sign"></i> Total: $<?php echo number_format($booking['total_cost'], 2); ?>
                                                 </p>
                                             </div>
                                             <div class="text-end">

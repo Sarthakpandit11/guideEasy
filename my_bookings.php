@@ -136,6 +136,9 @@ unset($_SESSION['success']); // Clear the message after displaying
                                     <a href="guide_profile.php?id=<?php echo $booking['guide_id']; ?>" class="btn btn-outline-primary btn-sm">
                                         <i class="fas fa-user"></i> View Guide
                                     </a>
+                                    <a href="payment.php?booking_id=<?php echo $booking['id']; ?>" class="btn btn-success btn-sm">
+                                        <i class="fas fa-credit-card"></i> Pay Now
+                                    </a>
                                     <?php if ($booking['status'] === 'pending'): ?>
                                         <button class="btn btn-outline-danger btn-sm" onclick="cancelBooking(<?php echo $booking['id']; ?>)">
                                             <i class="fas fa-times"></i> Cancel

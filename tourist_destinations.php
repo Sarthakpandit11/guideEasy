@@ -45,6 +45,11 @@ while ($guide = $guides_result->fetch_assoc()) {
             height: 250px;
             object-fit: cover;
         }
+        .hero-section.bg-primary {
+            background: linear-gradient(rgba(0, 60, 180, 0.7), rgba(0, 60, 180, 0.7)), url('kathmandu/thamel.png') center center/cover no-repeat !important;
+            color: #fff;
+            position: relative;
+        }
         .booking-form {
             background: rgba(255, 255, 255, 0.9);
             padding: 2rem;
@@ -112,7 +117,7 @@ while ($guide = $guides_result->fetch_assoc()) {
                 <!-- Kathmandu -->
                 <div class="col-md-6">
                     <div class="destination-card">
-                        <img src="images/kathmandu.jpg" class="card-img-top" alt="Kathmandu">
+                        <img src="kathmandu/kathmandumain.png" class="card-img-top" alt="Kathmandu">
                         <div class="card-body">
                             <h5 class="card-title">Kathmandu</h5>
                             <p class="card-text">Explore the cultural heart of Nepal with its ancient temples and vibrant streets.</p>
@@ -126,7 +131,7 @@ while ($guide = $guides_result->fetch_assoc()) {
                 <!-- Pokhara -->
                 <div class="col-md-6">
                     <div class="destination-card">
-                        <img src="images/pokhara.jpg" class="card-img-top" alt="Pokhara">
+                        <img src="pokhara/pokhara.png" class="card-img-top" alt="Pokhara">
                         <div class="card-body">
                             <h5 class="card-title">Pokhara</h5>
                             <p class="card-text">Discover the beauty of lakes and mountains in Nepal's adventure capital.</p>
@@ -140,7 +145,7 @@ while ($guide = $guides_result->fetch_assoc()) {
                 <!-- Everest Region -->
                 <div class="col-md-6">
                     <div class="destination-card">
-                        <img src="images/everest.jpg" class="card-img-top" alt="Everest Region">
+                        <img src="Everest/EverestRegion.png" class="card-img-top" alt="Everest Region">
                         <div class="card-body">
                             <h5 class="card-title">Everest Region</h5>
                             <p class="card-text">Experience the majesty of the world's highest peak and its surrounding beauty.</p>
@@ -154,7 +159,7 @@ while ($guide = $guides_result->fetch_assoc()) {
                 <!-- Chitwan -->
                 <div class="col-md-6">
                     <div class="destination-card">
-                        <img src="images/chitwan.jpg" class="card-img-top" alt="Chitwan">
+                        <img src="Everest/chitwan.png" class="card-img-top" alt="Chitwan">
                         <div class="card-body">
                             <h5 class="card-title">Chitwan</h5>
                             <p class="card-text">Experience wildlife and jungle adventures in Nepal's famous national park.</p>

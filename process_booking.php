@@ -9,13 +9,13 @@ try {
     session_start();
     require_once 'db_connect.php';
 
-    // Debug output
-    echo "<pre>";
-    echo "POST Data:\n";
-    print_r($_POST);
-    echo "\nSession Data:\n";
-    print_r($_SESSION);
-    echo "</pre>";
+    // Debug output (REMOVE ALL BELOW)
+    // echo "<pre>";
+    // echo "POST Data:\n";
+    // print_r($_POST);
+    // echo "\nSession Data:\n";
+    // print_r($_SESSION);
+    // echo "</pre>";
 
     // Check if user is logged in and is a tourist
     if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'tourist') {
@@ -60,7 +60,7 @@ try {
     $location_result = $location_check->get_result();
     $location_count = $location_result->fetch_assoc()['count'];
     
-    echo "<pre>Number of guides with location '$destination': $location_count</pre>";
+    // echo "<pre>Number of guides with location '$destination': $location_count</pre>";
 
     // Get available guides based on their profile location
     $guides_query = "SELECT 
@@ -95,9 +95,9 @@ try {
 
     $guides_result = $stmt->get_result();
     
-    echo "<pre>SQL Query: " . $guides_query . "</pre>";
-    echo "<pre>Destination: " . $destination . "</pre>";
-    echo "<pre>Found " . $guides_result->num_rows . " guides for " . htmlspecialchars($destination) . "</pre>";
+    // echo "<pre>SQL Query: " . $guides_query . "</pre>";
+    // echo "<pre>Destination: " . $destination . "</pre>";
+    // echo "<pre>Found " . $guides_result->num_rows . " guides for " . htmlspecialchars($destination) . "</pre>";
 
     // Debug: Show all available guides regardless of location
     $all_guides_query = "SELECT u.id, u.name, gs.location, gs.availability_status 
@@ -105,20 +105,20 @@ try {
                         JOIN guide_settings gs ON u.id = gs.user_id 
                         WHERE u.role = 'guide'";
     $all_guides_result = $conn->query($all_guides_query);
-    echo "<pre>All available guides:\n";
-    while ($guide = $all_guides_result->fetch_assoc()) {
-        echo "Guide: " . $guide['name'] . ", Location: " . $guide['location'] . ", Status: " . $guide['availability_status'] . "\n";
-    }
-    echo "</pre>";
+    // echo "<pre>All available guides:\n";
+    // while ($guide = $all_guides_result->fetch_assoc()) {
+    //     echo "Guide: " . $guide['name'] . ", Location: " . $guide['location'] . ", Status: " . $guide['availability_status'] . "\n";
+    // }
+    // echo "</pre>";
 
     // Debug: Show the exact location values in the database
     $location_values_query = "SELECT DISTINCT location FROM guide_settings WHERE location IS NOT NULL";
     $location_values_result = $conn->query($location_values_query);
-    echo "<pre>All location values in database:\n";
-    while ($row = $location_values_result->fetch_assoc()) {
-        echo "Location: '" . $row['location'] . "'\n";
-    }
-    echo "</pre>";
+    // echo "<pre>All location values in database:\n";
+    // while ($row = $location_values_result->fetch_assoc()) {
+    //     echo "Location: '" . $row['location'] . "'\n";
+    // }
+    // echo "</pre>";
 
 } catch (Exception $e) {
     echo "<div style='color: red; padding: 20px; margin: 20px; border: 1px solid red;'>";

@@ -83,7 +83,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['book_guide'])) {
         $total_hours = $total_days * 8; // Assuming 8 hours per day
         
         // Calculate total cost
-        $total_cost = $total_days * $guide['price_per_day'] * $number_of_people;
+        $price_per_day = isset($guide['rate_per_hour']) ? floatval($guide['rate_per_hour']) * 8 : 0;
+        $total_cost = $total_days * $price_per_day * $number_of_people;
         
         // Start transaction
         $conn->begin_transaction();
@@ -175,6 +176,16 @@ while ($row = $reviews_result->fetch_assoc()) {
 // Set default images if not provided
 $profile_image = !empty($guide['profile_picture']) ? $guide['profile_picture'] : 'images/default_profile.png';
 $cover_image = !empty($guide['cover_image']) ? $guide['cover_image'] : 'images/default_cover.png';
+
+// Check if guide is unavailable today
+$today = date('Y-m-d');
+$unavail_stmt = $conn->prepare("SELECT 1 FROM guide_availability WHERE guide_id = ? AND status = 'unavailable' AND date = ? LIMIT 1");
+$unavail_stmt->bind_param("is", $guide_id, $today);
+$unavail_stmt->execute();
+$unavail_stmt->store_result();
+$is_unavailable_today = $unavail_stmt->num_rows > 0;
+
+$price_per_day = isset($guide['rate_per_hour']) ? floatval($guide['rate_per_hour']) * 8 : 0;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -280,6 +291,11 @@ $cover_image = !empty($guide['cover_image']) ? $guide['cover_image'] : 'images/d
                 ?>
                 <span class="ms-2"><?php echo $avg_rating; ?> (<?php echo $guide['total_reviews'] ?? 0; ?> reviews)</span>
             </div>
+            <?php if ($is_unavailable_today): ?>
+                <span class="badge bg-danger fs-6 mb-2">Unavailable Today</span>
+            <?php else: ?>
+                <span class="badge bg-success fs-6 mb-2">Available</span>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -441,9 +457,16 @@ $cover_image = !empty($guide['cover_image']) ? $guide['cover_image'] : 'images/d
                                    min="1" required>
                         </div>
                         <div class="mb-3">
-                            <p class="text-muted">Price per day: $<?php echo number_format($guide['price_per_day'], 2); ?></p>
+                            <p class="text-muted">Price per day: $<?php echo number_format($price_per_day, 2); ?></p>
                         </div>
-                        <button type="submit" name="book_guide" class="btn btn-primary w-100">Book Now</button>
+                        <input type="hidden" id="price_per_day" value="<?php echo $price_per_day; ?>">
+                        <div id="booking-summary" class="alert alert-info" style="display:none;">
+                            <span id="summary-days"></span> days, 
+                            <span id="summary-hours"></span> hours, 
+                            <span id="summary-people"></span> people<br>
+                            <strong>Total: $<span id="summary-total"></span></strong>
+                        </div>
+                        <button type="submit" id="book-btn" name="book_guide" class="btn btn-primary w-100" disabled>Book Now</button>
                     </form>
                 </div>
 
@@ -469,6 +492,42 @@ $cover_image = !empty($guide['cover_image']) ? $guide['cover_image'] : 'images/d
         document.getElementById('start_date').addEventListener('change', function() {
             document.getElementById('end_date').min = this.value;
         });
+
+        // Live price calculation
+        function updateBookingSummary() {
+            const start = document.getElementById('start_date').value;
+            const end = document.getElementById('end_date').value;
+            const people = parseInt(document.getElementById('number_of_people').value) || 1;
+            const pricePerDay = parseFloat(document.getElementById('price_per_day').value);
+            const bookBtn = document.getElementById('book-btn');
+
+            if (start && end && pricePerDay > 0) {
+                const startDate = new Date(start);
+                const endDate = new Date(end);
+                if (endDate >= startDate) {
+                    const days = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+                    const hours = days * 8; // Assuming 8 hours per day
+                    const total = days * pricePerDay * people;
+
+                    document.getElementById('summary-days').textContent = days;
+                    document.getElementById('summary-hours').textContent = hours;
+                    document.getElementById('summary-people').textContent = people;
+                    document.getElementById('summary-total').textContent = total.toFixed(2);
+                    document.getElementById('booking-summary').style.display = '';
+                    bookBtn.disabled = false;
+                } else {
+                    document.getElementById('booking-summary').style.display = 'none';
+                    bookBtn.disabled = true;
+                }
+            } else {
+                document.getElementById('booking-summary').style.display = 'none';
+                bookBtn.disabled = true;
+            }
+        }
+
+        document.getElementById('start_date').addEventListener('change', updateBookingSummary);
+        document.getElementById('end_date').addEventListener('change', updateBookingSummary);
+        document.getElementById('number_of_people').addEventListener('input', updateBookingSummary);
     </script>
 </body>
 </html> 
