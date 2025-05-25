@@ -21,10 +21,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message']) && isset($
     $stmt->execute();
     
     // Create notification for the guide
-    $notification_query = "INSERT INTO notifications (guide_id, tourist_id, message) VALUES (?, ?, ?)";
-    $notification_message = "New message from " . $_SESSION['username'];
+    $booking_id = null;
+    $notification_query = "INSERT INTO notifications (guide_id, tourist_id, booking_id, message) VALUES (?, ?, ?, ?)";
+    $notification_message = "New message from " . (isset($_SESSION['name']) ? $_SESSION['name'] : 'Tourist');
     $stmt = $conn->prepare($notification_query);
-    $stmt->bind_param("iis", $guide_id, $tourist_id, $notification_message);
+    $stmt->bind_param("iiis", $guide_id, $tourist_id, $booking_id, $notification_message);
     $stmt->execute();
     
     header("Location: tourist_messages.php?guide_id=" . $guide_id);
@@ -97,10 +98,10 @@ $guides_result = $stmt->get_result();
         .chat-container {
             display: flex;
             height: 75vh;
-            border-radius: 12px;
+            border-radius: 18px;
             overflow: hidden;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-            background: #fff;
+            box-shadow: 0 8px 24px rgba(20,30,40,0.10);
+            background: linear-gradient(135deg, #f8fafc 80%, #e3e9f7 100%);
             margin-top: 30px;
         }
         .user-list {
@@ -117,17 +118,20 @@ $guides_result = $stmt->get_result();
             align-items: center;
             padding: 16px;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: background 0.2s, box-shadow 0.2s;
             border-bottom: 1px solid #e4e6eb;
             background: none;
+            border-radius: 14px;
+            margin: 8px 8px 0 8px;
         }
         .user-list .guide-item.active,
         .user-list .guide-item:hover {
-            background: #e7f3ff;
+            background: linear-gradient(90deg, #e7f3ff 80%, #e0e7ff 100%);
+            box-shadow: 0 2px 8px rgba(79, 140, 255, 0.08);
         }
         .user-avatar {
-            width: 40px;
-            height: 40px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             background: #dbeafe;
             display: flex;
@@ -137,42 +141,50 @@ $guides_result = $stmt->get_result();
             color: #2563eb;
             margin-right: 12px;
             font-size: 20px;
+            border: 2.5px solid #fff;
+            box-shadow: 0 2px 8px rgba(79, 140, 255, 0.10);
         }
         .chat-area {
             flex: 1;
             display: flex;
             flex-direction: column;
-            background: #f0f2f5;
+            background: linear-gradient(135deg, #f0f2f5 80%, #e3e9f7 100%);
             padding: 0;
         }
         .chat-header {
             padding: 18px 24px;
-            background: #fff;
-            border-bottom: 1px solid #e4e6eb;
+            background: linear-gradient(90deg, #fff 80%, #e0e7ff 100%);
+            border-bottom: 1.5px solid #e4e6eb;
             font-weight: bold;
-            font-size: 18px;
+            font-size: 20px;
             display: flex;
             align-items: center;
+            box-shadow: 0 2px 8px rgba(79, 140, 255, 0.04);
         }
         .messages {
             flex: 1;
             overflow-y: auto;
-            padding: 24px;
+            padding: 32px 32px 24px 32px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 16px;
         }
         .message-row {
             display: flex;
             align-items: flex-end;
+            animation: popIn 0.3s cubic-bezier(.4,2,.3,1);
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.95) translateY(10px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
         }
         .message-row.sent {
             justify-content: flex-end;
         }
         .message-bubble {
             max-width: 60%;
-            padding: 12px 18px;
-            border-radius: 20px;
+            padding: 14px 22px;
+            border-radius: 22px 22px 8px 22px;
             background: #e4e6eb;
             color: #1a1a1a;
             font-size: 16px;
@@ -180,16 +192,23 @@ $guides_result = $stmt->get_result();
             position: relative;
             word-break: break-word;
             box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border: 1.5px solid #e0e7ff;
         }
         .message-row.sent .message-bubble {
-            background: #0084ff;
+            background: linear-gradient(90deg, #4f8cff 60%, #6be0ff 100%);
             color: #fff;
-            border-bottom-right-radius: 4px;
+            border-bottom-right-radius: 8px;
+            border-top-right-radius: 22px;
+            border: 1.5px solid #4f8cff;
+            box-shadow: 0 4px 16px rgba(79, 140, 255, 0.10);
         }
         .message-row.received .message-bubble {
-            background: #e4e6eb;
+            background: #fff;
             color: #1a1a1a;
-            border-bottom-left-radius: 4px;
+            border-bottom-left-radius: 8px;
+            border-top-left-radius: 22px;
+            border: 1.5px solid #e0e7ff;
+            box-shadow: 0 2px 8px rgba(79, 140, 255, 0.06);
         }
         .message-meta {
             font-size: 12px;
@@ -200,67 +219,145 @@ $guides_result = $stmt->get_result();
         }
         .message-input-container {
             display: flex;
-            padding: 16px 24px;
-            background: #fff;
-            border-top: 1px solid #e4e6eb;
+            padding: 18px 28px;
+            background: linear-gradient(90deg, #fff 80%, #e0e7ff 100%);
+            border-top: 1.5px solid #e4e6eb;
+            box-shadow: 0 -2px 8px rgba(79, 140, 255, 0.04);
         }
         .message-input {
             flex: 1;
             border: none;
-            border-radius: 20px;
-            padding: 10px 16px;
+            border-radius: 22px;
+            padding: 12px 18px;
             font-size: 16px;
             background: #f1f5f9;
-            margin-right: 8px;
+            margin-right: 10px;
             outline: none;
+            box-shadow: 0 2px 8px rgba(79, 140, 255, 0.04);
         }
         .send-btn {
-            background: #0084ff;
+            background: linear-gradient(90deg, #4f8cff 60%, #6be0ff 100%);
             color: #fff;
             border: none;
-            border-radius: 20px;
-            padding: 10px 20px;
+            border-radius: 22px;
+            padding: 10px 28px;
             font-size: 16px;
+            font-weight: 600;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+            box-shadow: 0 2px 8px rgba(79, 140, 255, 0.10);
         }
         .send-btn:hover {
-            background: #005bb5;
+            background: linear-gradient(90deg, #2563eb 60%, #38bdf8 100%);
+            color: #fff;
+            transform: translateY(-2px) scale(1.04);
+            box-shadow: 0 4px 16px rgba(79, 140, 255, 0.18);
+        }
+        .curvy-navbar-wrapper {
+            position: relative;
+            z-index: 10;
+        }
+        .curvy-navbar-bg {
+            position: absolute;
+            left: 0; right: 0; top: 0;
+            width: 100%;
+            height: 110px;
+            pointer-events: none;
+        }
+        .custom-navbar {
+            background: rgba(20, 30, 40, 0.7);
+            backdrop-filter: blur(8px);
+            border: none;
+            box-shadow: none;
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+            position: relative;
+            z-index: 2;
+        }
+        .custom-navbar .navbar-brand {
+            font-weight: 700;
+            font-size: 1.7rem;
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+        }
+        .custom-navbar .navbar-brand img {
+            height: 40px;
+            margin-right: 10px;
+        }
+        .custom-navbar .navbar-brand .site-name {
+            color: #fff;
+            font-weight: 700;
+            font-size: 1.4rem;
+            letter-spacing: 1.5px;
+        }
+        .custom-navbar .navbar-nav .nav-link {
+            color: #fff;
+            text-transform: uppercase;
+            font-weight: 500;
+            letter-spacing: 1.5px;
+            margin-left: 1.2rem;
+            margin-right: 1.2rem;
+            font-size: 1.05rem;
+            transition: color 0.2s;
+        }
+        .custom-navbar .navbar-nav .nav-link.active,
+        .custom-navbar .navbar-nav .nav-link:focus,
+        .custom-navbar .navbar-nav .nav-link:hover {
+            color: #FF6B4A;
+        }
+        .custom-navbar .navbar-nav .nav-link:last-child {
+            margin-right: 0;
+        }
+        .custom-navbar .navbar-toggler {
+            border: none;
+        }
+        .custom-navbar .navbar-toggler:focus {
+            box-shadow: none;
         }
     </style>
 </head>
 <body>
-    <!-- Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
-        <div class="container">
-            <a class="navbar-brand" href="tourist_dashboard.php">
-                <img src="images/logo.png" alt="Guide Easy Logo" height="40" class="d-inline-block align-text-top me-2">
-                Guide Easy
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <a class="nav-link" href="tourist_dashboard.php">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="tourist_destinations.php">Destinations</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="my_bookings.php">My Bookings</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="tourist_messages.php">Messages</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="logout.php">Logout</a>
-                    </li>
-                </ul>
+    <div class="curvy-navbar-wrapper">
+        <nav class="navbar navbar-expand-lg custom-navbar fixed-top">
+            <div class="container">
+                <a class="navbar-brand" href="tourist_dashboard.php">
+                    <img src="images/logo.png" alt="Guide Easy Logo">
+                    <span class="site-name">Guide Easy</span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link" href="tourist_dashboard.php">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="tourist_destinations.php">Destinations</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="my_bookings.php">My Bookings</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="tourist_messages.php">Messages</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="tourist_settings.php">Settings</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="logout.php">Logout</a>
+                        </li>
+                    </ul>
+                </div>
             </div>
-        </div>
-    </nav>
+        </nav>
+        <!-- SVG for curvy bottom -->
+        <svg class="curvy-navbar-bg" viewBox="0 0 1440 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0,0 H1440 V60 Q1200,110 720,80 Q240,50 0,110 Z" fill="rgba(20,30,40,0.7)"/>
+        </svg>
+    </div>
 
     <!-- Main Content -->
     <div class="container" style="margin-top: 80px;">
@@ -288,7 +385,7 @@ $guides_result = $stmt->get_result();
                         <img src="images/default_guide.jpg" alt="<?php echo htmlspecialchars($selected_guide['name']); ?>" class="user-avatar me-2">
                         <?php echo htmlspecialchars($selected_guide['name']); ?>
                     </div>
-                    <div class="messages">
+                    <div class="messages" id="messagesContainer">
                         <?php foreach ($messages as $msg): ?>
                             <div class="message-row <?php echo $msg['message_type']; ?>">
                                 <div>
@@ -320,9 +417,9 @@ $guides_result = $stmt->get_result();
     <script>
         // Scroll to bottom of messages
         document.addEventListener('DOMContentLoaded', function() {
-            const messageContainer = document.getElementById('messageContainer');
-            if (messageContainer) {
-                messageContainer.scrollTop = messageContainer.scrollHeight;
+            var messagesDiv = document.getElementById('messagesContainer');
+            if (messagesDiv) {
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
             }
         });
     </script>

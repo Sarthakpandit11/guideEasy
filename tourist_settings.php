@@ -90,76 +90,180 @@ if ($latest_update) {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .settings-section { padding: 100px 0; background-color: #f8f9fa; min-height: 100vh; }
-        .settings-card { background: white; border-radius: 10px; padding: 30px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
-        .profile-image { width: 150px; height: 150px; object-fit: cover; border-radius: 50%; margin-bottom: 20px; }
+        .curvy-navbar-wrapper {
+            position: relative;
+            z-index: 10;
+        }
+        .curvy-navbar-bg {
+            position: absolute;
+            left: 0; right: 0; top: 0;
+            width: 100%;
+            height: 110px;
+            pointer-events: none;
+        }
+        .custom-navbar {
+            background: rgba(20, 30, 40, 0.7);
+            backdrop-filter: blur(8px);
+            border: none;
+            box-shadow: none;
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+            position: relative;
+            z-index: 2;
+        }
+        .custom-navbar .navbar-brand {
+            font-weight: 700;
+            font-size: 1.7rem;
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+        }
+        .custom-navbar .navbar-brand img {
+            height: 40px;
+            margin-right: 10px;
+        }
+        .custom-navbar .navbar-brand .site-name {
+            color: #fff;
+            font-weight: 700;
+            font-size: 1.4rem;
+            letter-spacing: 1.5px;
+        }
+        .custom-navbar .navbar-nav .nav-link {
+            color: #fff;
+            text-transform: uppercase;
+            font-weight: 500;
+            letter-spacing: 1.5px;
+            margin-left: 1.2rem;
+            margin-right: 1.2rem;
+            font-size: 1.05rem;
+            transition: color 0.2s;
+        }
+        .custom-navbar .navbar-nav .nav-link.active,
+        .custom-navbar .navbar-nav .nav-link:focus,
+        .custom-navbar .navbar-nav .nav-link:hover {
+            color: #FF6B4A;
+        }
+        .custom-navbar .navbar-nav .nav-link:last-child {
+            margin-right: 0;
+        }
+        .custom-navbar .navbar-toggler {
+            border: none;
+        }
+        .custom-navbar .navbar-toggler:focus {
+            box-shadow: none;
+        }
+        .profile-card {
+            background: linear-gradient(135deg, #f8fafc 80%, #e3e9f7 100%);
+            border-radius: 22px;
+            box-shadow: 0 8px 24px rgba(20,30,40,0.10);
+            padding: 2.5rem 2.5rem 2rem 2.5rem;
+            max-width: 500px;
+            margin: 60px auto 0 auto;
+            border: 2.5px solid #FF6B4A;
+        }
+        .profile-card h2 {
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+        .profile-card label {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+        .profile-card .form-control {
+            border-radius: 18px;
+            border: 1.5px solid #e0e7ff;
+            padding: 12px 18px;
+            font-size: 1.08rem;
+            margin-bottom: 1.2rem;
+            background: #f1f5f9;
+            box-shadow: 0 2px 8px rgba(79, 140, 255, 0.04);
+        }
+        .profile-card .form-control:focus {
+            border-color: #4f8cff;
+            box-shadow: 0 0 0 2px #4f8cff33;
+        }
+        .profile-card .btn-update {
+            border-radius: 22px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            padding: 12px 32px;
+            border: none;
+            background: linear-gradient(90deg, #4f8cff 60%, #6be0ff 100%);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(79, 140, 255, 0.10);
+            transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+            display: block;
+            margin: 0 auto;
+        }
+        .profile-card .btn-update:hover {
+            background: linear-gradient(90deg, #2563eb 60%, #38bdf8 100%);
+            color: #fff;
+            transform: translateY(-2px) scale(1.04);
+            box-shadow: 0 4px 16px rgba(79, 140, 255, 0.18);
+        }
+        .profile-image-preview {
+            display: block;
+            margin: 0 auto 1.2rem auto;
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2.5px solid #4f8cff;
+            box-shadow: 0 2px 8px rgba(79, 140, 255, 0.10);
+        }
     </style>
 </head>
 <body>
-
-<!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
-    <div class="container">
-        <a class="navbar-brand" href="tourist_dashboard.php">
-            <img src="images/logo.png" alt="Logo" height="40" class="me-2">Guide Easy
-        </a>
-        <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
-        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
-            <ul class="navbar-nav">
-                <li class="nav-item"><a class="nav-link" href="tourist_dashboard.php">Home</a></li>
-                <li class="nav-item"><a class="nav-link" href="all_guides.php">Find Guides</a></li>
-                <li class="nav-item"><a class="nav-link" href="my_bookings.php">My Bookings</a></li>
-                <li class="nav-item"><a class="nav-link active" href="tourist_settings.php">Settings</a></li>
-                <li class="nav-item"><a class="nav-link" href="logout.php">Logout</a></li>
-            </ul>
-        </div>
-    </div>
-</nav>
-
-<!-- Settings Section -->
-<section class="settings-section">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-8">
-                <div class="settings-card">
-                    <h2 class="text-center mb-4">Update Profile</h2>
-
-                    <?php if ($success_message): ?>
-                        <div class="alert alert-success"><?= htmlspecialchars($success_message) ?></div>
-                    <?php endif; ?>
-                    <?php if ($error_message): ?>
-                        <div class="alert alert-danger"><?= htmlspecialchars($error_message) ?></div>
-                    <?php endif; ?>
-
-                    <form method="POST">
-                        <div class="text-center mb-4">
-                            <img src="<?= !empty($tourist['profile_image']) ? $tourist['profile_image'] : 'images/default_profile.jpg' ?>" class="profile-image" alt="Profile Image">
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Full Name</label>
-                            <input type="text" class="form-control" name="name" required value="<?= htmlspecialchars($tourist['name']) ?>">
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Email</label>
-                            <input type="email" class="form-control" name="email" required value="<?= htmlspecialchars($tourist['email']) ?>">
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Phone Number</label>
-                            <input type="tel" class="form-control" name="phone" value="<?= htmlspecialchars($tourist['phone']) ?>">
-                        </div>
-
-                        <div class="text-center">
-                            <button type="submit" class="btn btn-primary">Update Profile</button>
-                        </div>
-                    </form>
+    <div class="curvy-navbar-wrapper">
+        <nav class="navbar navbar-expand-lg custom-navbar fixed-top">
+            <div class="container">
+                <a class="navbar-brand" href="tourist_dashboard.php">
+                    <img src="images/logo.png" alt="Guide Easy Logo">
+                    <span class="site-name">Guide Easy</span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link" href="tourist_dashboard.php">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="all_guides.php">Find Guides</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="my_bookings.php">My Bookings</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="tourist_settings.php">Settings</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="logout.php">Logout</a>
+                        </li>
+                    </ul>
                 </div>
             </div>
-        </div>
+        </nav>
+        <!-- SVG for curvy bottom -->
+        <svg class="curvy-navbar-bg" viewBox="0 0 1440 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0,0 H1440 V60 Q1200,110 720,80 Q240,50 0,110 Z" fill="rgba(20,30,40,0.7)"/>
+        </svg>
     </div>
-</section>
+    <div class="profile-card">
+        <h2 class="text-center">Update Profile</h2>
+        <img src="<?php echo !empty($tourist['profile_image']) ? $tourist['profile_image'] : 'images/default_profile.jpg'; ?>" alt="Profile Image" class="profile-image-preview">
+        <form method="POST" enctype="multipart/form-data">
+            <label for="name">Full Name</label>
+            <input type="text" class="form-control" id="name" name="name" value="<?php echo htmlspecialchars($tourist['name']); ?>" required>
+            <label for="email">Email</label>
+            <input type="email" class="form-control" id="email" name="email" value="<?php echo htmlspecialchars($tourist['email']); ?>" required>
+            <label for="phone">Phone Number</label>
+            <input type="text" class="form-control" id="phone" name="phone" value="<?php echo htmlspecialchars($tourist['phone']); ?>" required>
+            <button type="submit" class="btn btn-update">Update Profile</button>
+        </form>
+    </div>
 
 <!-- Footer -->
 <footer class="bg-dark text-light py-4 mt-auto">

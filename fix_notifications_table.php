@@ -1,7 +1,7 @@
 <?php
 require_once 'db_connect.php';
 
-// Drop the existing notifications table
+// Drop the existing notifications table if it exists
 $sql = "DROP TABLE IF EXISTS notifications";
 if ($conn->query($sql) === TRUE) {
     echo "Old notifications table dropped successfully<br>";

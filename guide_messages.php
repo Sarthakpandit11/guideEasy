@@ -292,7 +292,7 @@ $tourists_result = $stmt->get_result();
                         <div class="user-avatar me-2"><i class="fas fa-user"></i></div>
                         <?php echo htmlspecialchars($selected_tourist['name']); ?>
                     </div>
-                    <div class="messages">
+                    <div class="messages" id="messagesContainer">
                         <?php foreach ($messages as $msg): ?>
                             <div class="message-row <?php echo $msg['message_type']; ?>">
                                 <div>
@@ -324,9 +324,9 @@ $tourists_result = $stmt->get_result();
     <script>
         // Scroll to bottom of messages
         document.addEventListener('DOMContentLoaded', function() {
-            const messageContainer = document.getElementById('messageContainer');
-            if (messageContainer) {
-                messageContainer.scrollTop = messageContainer.scrollHeight;
+            var messagesDiv = document.getElementById('messagesContainer');
+            if (messagesDiv) {
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
             }
         });
     </script>

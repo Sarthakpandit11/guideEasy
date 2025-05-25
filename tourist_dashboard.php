@@ -9,7 +9,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'tourist') {
 }
 
 // Fetch featured guides from the database
-$featured_guides_query = "SELECT u.*, gs.profile_picture, gs.availability_status, gs.specialization, gs.rate_per_hour, gs.bio,
+$featured_guides_query = "SELECT u.*, gs.profile_picture, gs.languages, gs.availability_status, gs.specialization, gs.rate_per_hour, gs.bio,
                          (SELECT AVG(rating) FROM reviews WHERE guide_id = u.id) as avg_rating,
                          (SELECT COUNT(*) FROM reviews WHERE guide_id = u.id) as total_reviews
                          FROM users u
@@ -113,24 +113,52 @@ while ($row = $pkg_result->fetch_assoc()) {
         }
         .guide-card {
             background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s;
+            border-radius: 18px;
+            padding: 24px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18), 0 1.5px 6px 0 rgba(60,60,60,0.08);
+            transition: transform 0.35s cubic-bezier(.21,1.02,.73,1), box-shadow 0.35s cubic-bezier(.21,1.02,.73,1);
+            border: 1.5px solid #f0f0f0;
+            position: relative;
+            overflow: visible;
         }
         .guide-card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-10px) scale(1.03) rotateX(3deg);
+            box-shadow: 0 16px 48px 0 rgba(31, 38, 135, 0.22), 0 4px 16px 0 rgba(60,60,60,0.12);
+            z-index: 2;
         }
         .guide-card img {
-            width: 100px;
-            height: 100px;
+            width: 110px;
+            height: 110px;
             object-fit: cover;
+            border-radius: 50%;
+            border: 3px solid #fff;
+            box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.10);
+            margin-bottom: 10px;
         }
         .guide-card h4 {
             margin-bottom: 10px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
         }
         .guide-card .rating {
             color: #ffc107;
+            font-size: 1.1rem;
+        }
+        .guide-card .badge.bg-success {
+            font-size: 1.05rem;
+            padding: 0.5em 1.1em;
+            border-radius: 1.2em;
+            box-shadow: 0 2px 8px 0 rgba(40, 167, 69, 0.10);
+        }
+        .guide-card .btn-primary {
+            border-radius: 1.2em;
+            font-weight: 600;
+            box-shadow: 0 2px 8px 0 rgba(0,123,255,0.10);
+        }
+        .guide-card .badge.bg-info {
+            background: linear-gradient(90deg, #a1c4fd 0%, #c2e9fb 100%);
+            color: #222;
+            font-weight: 500;
         }
         .popular-destinations {
             padding: 4rem 0;
@@ -148,43 +176,177 @@ while ($row = $pkg_result->fetch_assoc()) {
             height: 200px;
             object-fit: cover;
         }
+        .curvy-navbar-wrapper {
+            position: relative;
+            z-index: 10;
+        }
+        .curvy-navbar-bg {
+            position: absolute;
+            left: 0; right: 0; top: 0;
+            width: 100%;
+            height: 110px;
+            pointer-events: none;
+        }
+        .custom-navbar {
+            background: rgba(20, 30, 40, 0.7);
+            backdrop-filter: blur(8px);
+            border: none;
+            box-shadow: none;
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+            position: relative;
+            z-index: 2;
+        }
+        .custom-navbar .navbar-brand {
+            font-weight: 700;
+            font-size: 1.7rem;
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+        }
+        .custom-navbar .navbar-brand img {
+            height: 40px;
+            margin-right: 10px;
+        }
+        .custom-navbar .navbar-brand .site-name {
+            color: #fff;
+            font-weight: 700;
+            font-size: 1.4rem;
+            letter-spacing: 1.5px;
+        }
+        .custom-navbar .navbar-nav .nav-link {
+            color: #fff;
+            text-transform: uppercase;
+            font-weight: 500;
+            letter-spacing: 1.5px;
+            margin-left: 1.2rem;
+            margin-right: 1.2rem;
+            font-size: 1.05rem;
+            transition: color 0.2s;
+        }
+        .custom-navbar .navbar-nav .nav-link.active,
+        .custom-navbar .navbar-nav .nav-link:focus,
+        .custom-navbar .navbar-nav .nav-link:hover {
+            color: #FF6B4A;
+        }
+        .custom-navbar .navbar-nav .nav-link:last-child {
+            margin-right: 0;
+        }
+        .custom-navbar .navbar-toggler {
+            border: none;
+        }
+        .custom-navbar .navbar-toggler:focus {
+            box-shadow: none;
+        }
+        /* 3D effect for package cards */
+        .card.h-100.shadow-sm.border-0 {
+            border-radius: 22px;
+            box-shadow: 0 10px 36px 0 rgba(31, 38, 135, 0.16), 0 2px 8px 0 rgba(60,60,60,0.10);
+            transition: transform 0.35s cubic-bezier(.21,1.02,.73,1), box-shadow 0.35s cubic-bezier(.21,1.02,.73,1);
+            border: 1.5px solid #e6eaf3;
+            position: relative;
+            overflow: visible;
+            background: linear-gradient(135deg, #fafdff 80%, #e6f0fa 100%);
+            padding: 1.5rem 1.2rem 1.2rem 1.2rem;
+            min-height: 340px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .card.h-100.shadow-sm.border-0:hover {
+            transform: translateY(-12px) scale(1.04) rotateX(3deg);
+            box-shadow: 0 20px 56px 0 rgba(31, 38, 135, 0.22), 0 6px 20px 0 rgba(60,60,60,0.13);
+            z-index: 3;
+        }
+        .card.h-100 .rounded-circle {
+            box-shadow: 0 2px 10px 0 rgba(31, 38, 135, 0.13);
+            border: 2.5px solid #fff;
+        }
+        .card.h-100 .fw-bold {
+            font-size: 1.13em;
+            letter-spacing: 0.2px;
+        }
+        .card.h-100 .badge.bg-success {
+            font-size: 1.01em;
+            padding: 0.45em 1.05em;
+            border-radius: 1.1em;
+            box-shadow: 0 2px 8px 0 rgba(40, 167, 69, 0.10);
+            background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%);
+            color: #fff;
+            font-weight: 600;
+        }
+        .card.h-100 .badge.bg-info {
+            background: linear-gradient(90deg, #a1c4fd 0%, #c2e9fb 100%);
+            color: #222;
+            font-weight: 500;
+            border-radius: 1.1em;
+            padding: 0.45em 1.05em;
+        }
+        .card.h-100 .btn-primary {
+            border-radius: 1.2em;
+            font-weight: 600;
+            box-shadow: 0 2px 8px 0 rgba(0,123,255,0.10);
+            background: linear-gradient(90deg, #4e54c8 0%, #8f94fb 100%);
+            border: none;
+        }
+        .card.h-100 .btn-primary:hover {
+            background: linear-gradient(90deg, #8f94fb 0%, #4e54c8 100%);
+        }
+        .card.h-100 .card-body {
+            padding: 0;
+        }
+        .card.h-100 .mb-2, .card.h-100 .mb-3 {
+            margin-bottom: 0.7rem !important;
+        }
+        .card.h-100 .d-flex.align-items-center.mb-3 {
+            margin-bottom: 1.1rem !important;
+        }
+        .card.h-100 .text-end.mb-2 {
+            margin-bottom: 0.5rem !important;
+        }
     </style>
 </head>
 <body>
-    <!-- Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="tourist_dashboard.php">
-                <img src="images/logo.png" alt="Guide Easy Logo" height="40" class="d-inline-block align-text-top me-2">
-                Guide Easy
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <a class="nav-link" href="tourist_dashboard.php">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="tourist_destinations.php">Destinations</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="my_bookings.php">My Bookings</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="tourist_messages.php">Messages</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="tourist_settings.php">Settings</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="logout.php">Logout</a>
-                    </li>
-                </ul>
+    <div class="curvy-navbar-wrapper">
+        <nav class="navbar navbar-expand-lg custom-navbar fixed-top">
+            <div class="container">
+                <a class="navbar-brand" href="tourist_dashboard.php">
+                    <img src="images/logo.png" alt="Guide Easy Logo">
+                    <span class="site-name">Guide Easy</span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="tourist_dashboard.php">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="tourist_destinations.php">Destinations</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="my_bookings.php">My Bookings</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="tourist_messages.php">Messages</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="tourist_settings.php">Settings</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="logout.php">Logout</a>
+                        </li>
+                    </ul>
+                </div>
             </div>
-        </div>
-    </nav>
+        </nav>
+        <!-- SVG for curvy bottom -->
+        <svg class="curvy-navbar-bg" viewBox="0 0 1440 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0,0 H1440 V60 Q1200,110 720,80 Q240,50 0,110 Z" fill="rgba(20,30,40,0.7)"/>
+        </svg>
+    </div>
 
     <!-- Hero Section with Carousel -->
     <div class="hero-section">
@@ -268,7 +430,7 @@ while ($row = $pkg_result->fetch_assoc()) {
                                     </p>
                                     <p class="mb-3"><?php echo htmlspecialchars($guide['bio'] ?? ''); ?></p>
                                     <div class="mb-2">
-                                        <strong>Languages:</strong> <?php echo htmlspecialchars($guide['languages'] ?? 'N/A'); ?>
+                                        <strong>Languages:</strong> <?php echo !empty($guide['languages']) ? htmlspecialchars($guide['languages']) : 'N/A'; ?>
                                     </div>
                                     <div class="mb-2">
                                         <strong>Tour Categories:</strong>
@@ -346,7 +508,7 @@ while ($row = $pkg_result->fetch_assoc()) {
                                         <i class="far fa-calendar-alt"></i> <?php echo date('M d, Y', strtotime($pkg['created_at'])); ?>
                                     </div>
                                     <div class="d-grid">
-                                        <a href="guide_profile.php?id=<?php echo $pkg['guide_id']; ?>" class="btn btn-primary btn-sm"><i class="fas fa-user"></i> Contact Guide</a>
+                                        <a href="package_details.php?id=<?php echo $pkg['id']; ?>" class="btn btn-primary btn-sm"><i class="fas fa-eye"></i> View Package</a>
                                     </div>
                                 </div>
                             </div>

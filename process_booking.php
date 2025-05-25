@@ -140,127 +140,190 @@ ob_flush();
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
+        .curvy-navbar-wrapper {
+            position: relative;
+            z-index: 10;
+        }
+        .curvy-navbar-bg {
+            position: absolute;
+            left: 0; right: 0; top: 0;
+            width: 100%;
+            height: 110px;
+            pointer-events: none;
+        }
+        .custom-navbar {
+            background: rgba(20, 30, 40, 0.7);
+            backdrop-filter: blur(8px);
+            border: none;
+            box-shadow: none;
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+            position: relative;
+            z-index: 2;
+        }
+        .custom-navbar .navbar-brand {
+            font-weight: 700;
+            font-size: 1.7rem;
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+        }
+        .custom-navbar .navbar-brand img {
+            height: 40px;
+            margin-right: 10px;
+        }
+        .custom-navbar .navbar-brand .site-name {
+            color: #fff;
+            font-weight: 700;
+            font-size: 1.4rem;
+            letter-spacing: 1.5px;
+        }
+        .custom-navbar .navbar-nav .nav-link {
+            color: #fff;
+            text-transform: uppercase;
+            font-weight: 500;
+            letter-spacing: 1.5px;
+            margin-left: 1.2rem;
+            margin-right: 1.2rem;
+            font-size: 1.05rem;
+            transition: color 0.2s;
+        }
+        .custom-navbar .navbar-nav .nav-link.active,
+        .custom-navbar .navbar-nav .nav-link:focus,
+        .custom-navbar .navbar-nav .nav-link:hover {
+            color: #FF6B4A;
+        }
+        .custom-navbar .navbar-nav .nav-link:last-child {
+            margin-right: 0;
+        }
+        .custom-navbar .navbar-toggler {
+            border: none;
+        }
+        .custom-navbar .navbar-toggler:focus {
+            box-shadow: none;
+        }
+        .main-card {
+            background: linear-gradient(135deg, #f8fafc 80%, #e3e9f7 100%);
+            border-radius: 22px;
+            box-shadow: 0 8px 24px rgba(20,30,40,0.10);
+            padding: 2.2rem 2.2rem 1.5rem 2.2rem;
+            margin-bottom: 2.5rem;
+            border: 2.5px solid #FF6B4A;
+        }
+        .filter-card {
+            background: linear-gradient(135deg, #f8fafc 80%, #e3e9f7 100%);
+            border-radius: 18px;
+            box-shadow: 0 4px 16px rgba(20,30,40,0.08);
+            padding: 1.5rem 2rem 1.2rem 2rem;
+            margin-bottom: 2.5rem;
+            border: 2px solid #4f8cff22;
+        }
+        .filter-btn {
+            border-radius: 22px !important;
+            font-weight: 600;
+            font-size: 1.05rem;
+            padding: 10px 28px;
+            border: 2px solid #4f8cff;
+            background: #fff;
+            color: #2563eb;
+            margin-right: 12px;
+            margin-bottom: 10px;
+            transition: background 0.2s, color 0.2s, border 0.2s, box-shadow 0.2s;
+            box-shadow: 0 2px 8px rgba(79, 140, 255, 0.06);
+        }
+        .filter-btn.active, .filter-btn:focus, .filter-btn:hover {
+            background: linear-gradient(90deg, #4f8cff 60%, #6be0ff 100%);
+            color: #fff;
+            border: 2px solid #4f8cff;
+            box-shadow: 0 4px 16px rgba(79, 140, 255, 0.12);
+        }
         .guide-card {
-            background: white;
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s, box-shadow 0.3s;
-            border: 1px solid #eee;
-            margin-bottom: 20px;
+            background: linear-gradient(135deg, #fff 80%, #e3e9f7 100%);
+            border-radius: 18px;
+            box-shadow: 0 4px 16px rgba(20,30,40,0.10);
+            padding: 1.5rem 1.5rem 1.2rem 1.5rem;
+            margin-bottom: 2rem;
+            border: 2px solid #4f8cff22;
+            transition: transform 0.22s cubic-bezier(.4,2,.3,1), box-shadow 0.22s cubic-bezier(.4,2,.3,1);
         }
         .guide-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            transform: translateY(-8px) scale(1.025);
+            box-shadow: 0 8px 32px rgba(20, 30, 40, 0.18), 0 1.5px 6px rgba(20, 30, 40, 0.10);
         }
-        .guide-card img {
-            width: 120px;
-            height: 120px;
+        .guide-card .profile-img {
+            width: 54px;
+            height: 54px;
             object-fit: cover;
             border-radius: 50%;
-            border: 3px solid #fff;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            border: 2.5px solid #4f8cff;
+            box-shadow: 0 2px 8px rgba(79, 140, 255, 0.10);
+            margin-right: 14px;
         }
-        .booking-summary {
-            background: #f8f9fa;
-            padding: 25px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-            border: 1px solid #e9ecef;
+        .guide-card .guide-name {
+            font-weight: 700;
+            font-size: 1.18rem;
+            color: #222;
         }
-        .guide-name {
-            color: #2c3e50;
-            margin-bottom: 10px;
-            font-size: 1.25rem;
-        }
-        .location {
-            color: #666;
-            font-size: 0.95rem;
-        }
-        .bio {
-            color: #666;
-            font-size: 0.9rem;
-            line-height: 1.5;
-        }
-        .guide-selection-section {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-        }
-        .rating {
-            margin: 10px 0;
-        }
-        .rate-badge {
-            font-size: 1.1rem;
-            padding: 8px 12px;
-        }
-        /* Category Filter Styles */
-        .category-filter {
-            background: white;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            margin-bottom: 30px;
-        }
-        .category-filter .btn-outline-primary {
-            border-width: 2px;
+        .guide-card .guide-location {
+            color: #2563eb;
+            font-size: 1rem;
             font-weight: 500;
-            padding: 10px 15px;
-            transition: all 0.3s;
         }
-        .category-filter .btn-outline-primary:hover,
-        .category-filter .btn-outline-primary.active {
-            background-color: #0d6efd;
-            color: white;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(13, 110, 253, 0.2);
+        .guide-card .rate-badge {
+            border-radius: 18px;
+            background: linear-gradient(90deg, #22c55e 60%, #4ade80 100%);
+            color: #fff;
+            font-weight: 700;
+            font-size: 1.08rem;
+            padding: 7px 18px;
+            margin-bottom: 8px;
+            display: inline-block;
         }
-        .category-filter .btn-link {
-            text-decoration: none;
-            font-size: 0.9rem;
+        .guide-card .star-rating {
+            color: #ffc107;
+            font-size: 1.1rem;
         }
-        .category-filter .btn-link:hover {
-            text-decoration: underline;
-        }
-        .categories .badge {
-            font-size: 0.85rem;
-            padding: 6px 12px;
-            margin-right: 5px;
-            margin-bottom: 5px;
-            border-radius: 20px;
+        .guide-card .reviews-count {
+            color: #888;
+            font-size: 0.98rem;
         }
     </style>
 </head>
 <body>
-    <!-- Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
-        <div class="container">
-            <a class="navbar-brand" href="tourist_dashboard.php">
-                <img src="images/logo.png" alt="Guide Easy Logo" height="40" class="d-inline-block align-text-top me-2">
-                Guide Easy
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <a class="nav-link" href="tourist_dashboard.php">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="tourist_destinations.php">Destinations</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="my_bookings.php">My Bookings</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="logout.php">Logout</a>
-                    </li>
-                </ul>
+    <div class="curvy-navbar-wrapper">
+        <nav class="navbar navbar-expand-lg custom-navbar fixed-top">
+            <div class="container">
+                <a class="navbar-brand" href="tourist_dashboard.php">
+                    <img src="images/logo.png" alt="Guide Easy Logo">
+                    <span class="site-name">Guide Easy</span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link" href="tourist_dashboard.php">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="tourist_destinations.php">Destinations</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="my_bookings.php">My Bookings</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="logout.php">Logout</a>
+                        </li>
+                    </ul>
+                </div>
             </div>
-        </div>
-    </nav>
+        </nav>
+        <!-- SVG for curvy bottom -->
+        <svg class="curvy-navbar-bg" viewBox="0 0 1440 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0,0 H1440 V60 Q1200,110 720,80 Q240,50 0,110 Z" fill="rgba(20,30,40,0.7)"/>
+        </svg>
+    </div>
 
     <!-- Main Content -->
     <div class="container" style="margin-top: 80px;">

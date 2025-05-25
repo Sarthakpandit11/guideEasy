@@ -140,6 +140,7 @@ $users_result = $conn->query($users_query);
                                     <th>Phone</th>
                                     <th>Role</th>
                                     <th>Status</th>
+                                    <th>Photo Verification</th>
                                     <th>Joined Date</th>
                                     <th>Actions</th>
                                 </tr>
@@ -174,9 +175,19 @@ $users_result = $conn->query($users_query);
                                             <?php echo ucfirst($user['status']); ?>
                                         </span>
                                     </td>
+                                    <td>
+                                        <?php if ($user['role'] === 'tourist' && !empty($user['profile_photo'])): ?>
+                                            <a href="#" class="photo-popup" data-img="<?php echo htmlspecialchars($user['profile_photo']); ?>">
+                                                <img src="<?php echo htmlspecialchars($user['profile_photo']); ?>" alt="Profile Photo" style="width:48px; height:48px; object-fit:cover; border-radius:8px; border:1px solid #ccc; cursor:pointer;">
+                                            </a>
+                                        <?php else: ?>
+                                            <span class="text-muted">-</span>
+                                        <?php endif; ?>
+                                    </td>
                                     <td><?php echo date('M d, Y', strtotime($user['created_at'])); ?></td>
                                     <td>
                                         <button class="btn btn-outline-danger btn-sm delete-user-btn" data-user-id="<?php echo $user['id']; ?>">Delete</button>
+                                        <button class="btn btn-outline-primary btn-sm mail-user-btn" data-user-id="<?php echo $user['id']; ?>" data-user-email="<?php echo htmlspecialchars($user['email']); ?>" data-user-name="<?php echo htmlspecialchars($user['name']); ?>">Mail</button>
                                     </td>
                                 </tr>
                             <?php endwhile; ?>
@@ -203,6 +214,54 @@ $users_result = $conn->query($users_query);
         </footer>
     </div>
 
+    <!-- Photo Modal -->
+    <div class="modal fade" id="photoModal" tabindex="-1" aria-labelledby="photoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="photoModalLabel">Profile Photo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img id="modalPhoto" src="" alt="Profile Photo" style="max-width:100%; max-height:70vh; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.2);">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mail Modal -->
+    <div class="modal fade" id="mailModal" tabindex="-1" aria-labelledby="mailModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="POST" action="send_mail.php" id="mailForm">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="mailModalLabel">Send Email</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="user_id" id="mailUserId">
+                        <div class="mb-3">
+                            <label for="mailTo" class="form-label">To</label>
+                            <input type="email" class="form-control" id="mailTo" name="to" readonly required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="mailSubject" class="form-label">Subject</label>
+                            <input type="text" class="form-control" id="mailSubject" name="subject" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="mailMessage" class="form-label">Message</label>
+                            <textarea class="form-control" id="mailMessage" name="message" rows="5" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Send</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -225,6 +284,27 @@ $users_result = $conn->query($users_query);
                     })
                     .catch(() => alert('Failed to delete user.'));
                 }
+            });
+        });
+
+        document.querySelectorAll('.photo-popup').forEach(function(el) {
+            el.addEventListener('click', function(e) {
+                e.preventDefault();
+                var imgSrc = this.getAttribute('data-img');
+                document.getElementById('modalPhoto').src = imgSrc;
+                var modal = new bootstrap.Modal(document.getElementById('photoModal'));
+                modal.show();
+            });
+        });
+
+        document.querySelectorAll('.mail-user-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                document.getElementById('mailUserId').value = this.getAttribute('data-user-id');
+                document.getElementById('mailTo').value = this.getAttribute('data-user-email');
+                document.getElementById('mailSubject').value = '';
+                document.getElementById('mailMessage').value = '';
+                var modal = new bootstrap.Modal(document.getElementById('mailModal'));
+                modal.show();
             });
         });
     });

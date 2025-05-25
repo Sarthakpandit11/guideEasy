@@ -197,81 +197,261 @@ $price_per_day = isset($guide['rate_per_hour']) ? floatval($guide['rate_per_hour
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        .curvy-navbar-wrapper {
+            position: relative;
+            z-index: 10;
+        }
+        .curvy-navbar-bg {
+            position: absolute;
+            left: 0; right: 0; top: 0;
+            width: 100%;
+            height: 110px;
+            pointer-events: none;
+        }
+        .custom-navbar {
+            background: rgba(20, 30, 40, 0.7);
+            backdrop-filter: blur(8px);
+            border: none;
+            box-shadow: none;
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+            position: relative;
+            z-index: 2;
+        }
+        .custom-navbar .navbar-brand {
+            font-weight: 700;
+            font-size: 1.7rem;
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+        }
+        .custom-navbar .navbar-brand img {
+            height: 40px;
+            margin-right: 10px;
+        }
+        .custom-navbar .navbar-brand .site-name {
+            color: #fff;
+            font-weight: 700;
+            font-size: 1.4rem;
+            letter-spacing: 1.5px;
+        }
+        .custom-navbar .navbar-nav .nav-link {
+            color: #fff;
+            text-transform: uppercase;
+            font-weight: 500;
+            letter-spacing: 1.5px;
+            margin-left: 1.2rem;
+            margin-right: 1.2rem;
+            font-size: 1.05rem;
+            transition: color 0.2s;
+        }
+        .custom-navbar .navbar-nav .nav-link.active,
+        .custom-navbar .navbar-nav .nav-link:focus,
+        .custom-navbar .navbar-nav .nav-link:hover {
+            color: #FF6B4A;
+        }
+        .custom-navbar .navbar-nav .nav-link:last-child {
+            margin-right: 0;
+        }
+        .custom-navbar .navbar-toggler {
+            border: none;
+        }
+        .custom-navbar .navbar-toggler:focus {
+            box-shadow: none;
+        }
         .profile-header {
-            background: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%);
-            color: white;
-            padding: 120px 0 40px 0; /* More top padding for fixed navbar and image */
+            background: linear-gradient(135deg, #7f9cf5 60%, #a5b4fc 100%);
+            border-radius: 0 0 32px 32px;
+            box-shadow: 0 8px 24px rgba(79, 140, 255, 0.10);
+            padding: 3.5rem 0 2.5rem 0;
             text-align: center;
+            margin-bottom: 2.5rem;
             position: relative;
         }
-        .profile-image {
+        .profile-header .profile-img {
             width: 120px;
             height: 120px;
-            border-radius: 50%;
-            border: 5px solid #fff;
             object-fit: cover;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-            margin-top: 0;
-            background: #fff;
+            border-radius: 50%;
+            border: 4px solid #fff;
+            box-shadow: 0 4px 16px rgba(79, 140, 255, 0.18);
+            margin-bottom: 1.2rem;
         }
-        .profile-header h1 {
-            margin-top: 15px;
+        .profile-header .guide-name {
             font-size: 2.2rem;
             font-weight: 700;
+            color: #fff;
+            margin-bottom: 0.5rem;
         }
-        .profile-header .lead {
-            font-size: 1.2rem;
-            color: #e0e0e0;
+        .profile-header .guide-specialization {
+            color: #e0e7ff;
+            font-size: 1.15rem;
+            margin-bottom: 1.2rem;
         }
-        .card {
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-            margin-bottom: 24px;
-            padding: 24px;
-            background: #fff;
-        }
-        .card h3 {
+        .profile-header .star-rating {
+            color: #ffc107;
             font-size: 1.3rem;
-            margin-bottom: 12px;
         }
-        .btn-primary, .btn-outline-primary {
-            border-radius: 25px;
-            padding: 10px 28px;
+        .profile-header .reviews-count {
+            color: #e0e7ff;
+            font-size: 1.05rem;
+        }
+        .profile-header .status-badge {
+            border-radius: 18px;
+            background: linear-gradient(90deg, #22c55e 60%, #4ade80 100%);
+            color: #fff;
+            font-weight: 700;
+            font-size: 1.08rem;
+            padding: 7px 18px;
+            margin-bottom: 8px;
+            display: inline-block;
+        }
+        .profile-header .btn-message {
+            border-radius: 22px;
             font-weight: 600;
-            transition: background 0.2s, color 0.2s;
+            font-size: 1.1rem;
+            padding: 14px 0;
+            border: none;
+            background: linear-gradient(90deg, #4f8cff 60%, #6be0ff 100%);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(79, 140, 255, 0.10);
+            transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+            width: 100%;
+            max-width: 340px;
+            margin: 0 auto 1.2rem auto;
+            display: block;
         }
-        .btn-primary:hover, .btn-outline-primary:hover {
-            background: #4e54c8;
+        .profile-header .btn-message:hover {
+            background: linear-gradient(90deg, #2563eb 60%, #38bdf8 100%);
+            color: #fff;
+            transform: translateY(-2px) scale(1.04);
+            box-shadow: 0 4px 16px rgba(79, 140, 255, 0.18);
+        }
+        .profile-section {
+            background: linear-gradient(135deg, #f8fafc 80%, #e3e9f7 100%);
+            border-radius: 22px;
+            box-shadow: 0 8px 24px rgba(20,30,40,0.10);
+            padding: 2.2rem 2.2rem 1.5rem 2.2rem;
+            margin-bottom: 2.5rem;
+            border: 2.5px solid #FF6B4A;
+        }
+        .profile-section h3 {
+            font-weight: 700;
+            margin-bottom: 1.2rem;
+        }
+        .profile-section .badge {
+            border-radius: 18px;
+            font-size: 1.02rem;
+            padding: 7px 16px;
+            margin-bottom: 6px;
+            margin-right: 6px;
+        }
+        .profile-section .badge-info {
+            background: linear-gradient(90deg, #38bdf8 60%, #a5b4fc 100%);
             color: #fff;
         }
-        .booking-form input, .booking-form label {
-            border-radius: 8px;
+        .profile-section .badge-success {
+            background: linear-gradient(90deg, #22c55e 60%, #4ade80 100%);
+            color: #fff;
         }
-        @media (max-width: 768px) {
-            .profile-header {
-                padding: 40px 0 20px 0;
-            }
-            .profile-image {
-                width: 90px;
-                height: 90px;
-                margin-top: -45px;
-            }
-            .card {
-                padding: 16px;
-            }
+        .profile-section .badge-warning {
+            background: linear-gradient(90deg, #facc15 60%, #fbbf24 100%);
+            color: #fff;
+        }
+        .profile-section .badge-danger {
+            background: linear-gradient(90deg, #ef4444 60%, #f87171 100%);
+            color: #fff;
+        }
+        .profile-section .badge-secondary {
+            background: linear-gradient(90deg, #64748b 60%, #a1a1aa 100%);
+            color: #fff;
+        }
+        .profile-section .form-label {
+            font-weight: 500;
+        }
+        .profile-section .form-control {
+            border-radius: 18px;
+            border: 1.5px solid #e0e7ff;
+            padding: 12px 18px;
+            font-size: 1.08rem;
+            margin-bottom: 1.2rem;
+            background: #f1f5f9;
+            box-shadow: 0 2px 8px rgba(79, 140, 255, 0.04);
+        }
+        .profile-section .form-control:focus {
+            border-color: #4f8cff;
+            box-shadow: 0 0 0 2px #4f8cff33;
+        }
+        .profile-section .btn-primary {
+            border-radius: 22px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            padding: 12px 32px;
+            border: none;
+            background: linear-gradient(90deg, #4f8cff 60%, #6be0ff 100%);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(79, 140, 255, 0.10);
+            transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+            display: block;
+            margin: 0 auto;
+        }
+        .profile-section .btn-primary:hover {
+            background: linear-gradient(90deg, #2563eb 60%, #38bdf8 100%);
+            color: #fff;
+            transform: translateY(-2px) scale(1.04);
+            box-shadow: 0 4px 16px rgba(79, 140, 255, 0.18);
         }
     </style>
 </head>
 <body>
-    <?php include 'navbar.php'; ?>
+    <div class="curvy-navbar-wrapper">
+        <nav class="navbar navbar-expand-lg custom-navbar fixed-top">
+            <div class="container">
+                <a class="navbar-brand" href="tourist_dashboard.php">
+                    <img src="images/logo.png" alt="Guide Easy Logo">
+                    <span class="site-name">Guide Easy</span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link" href="tourist_dashboard.php">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="tourist_destinations.php">Destinations</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="my_bookings.php">My Bookings</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="tourist_messages.php">Messages</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="tourist_settings.php">Settings</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="logout.php">Logout</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <!-- SVG for curvy bottom -->
+        <svg class="curvy-navbar-bg" viewBox="0 0 1440 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0,0 H1440 V60 Q1200,110 720,80 Q240,50 0,110 Z" fill="rgba(20,30,40,0.7)"/>
+        </svg>
+    </div>
 
     <!-- Profile Header -->
     <div class="profile-header text-center">
         <div class="container">
             <img src="<?php echo $profile_image; ?>" 
-                 alt="<?php echo htmlspecialchars($guide['name']); ?>" class="profile-image">
-            <h1 class="mt-3"><?php echo htmlspecialchars($guide['name']); ?></h1>
-            <p class="lead">
+                 alt="<?php echo htmlspecialchars($guide['name']); ?>" class="profile-img">
+            <h1 class="guide-name"><?php echo htmlspecialchars($guide['name']); ?></h1>
+            <p class="guide-specialization">
                 <?php echo htmlspecialchars($guide['specialization'] ?? 'Professional Guide'); ?>
             </p>
             <div class="rating mb-3">
